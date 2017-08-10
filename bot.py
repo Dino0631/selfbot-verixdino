@@ -261,5 +261,6 @@ try:
     bot.run(TOKEN, bot=False)
 except:
     print('\nIMPROPER TOKEN PASSED\nCHECK YOUR `config.json`\n')
+    #lololololololololol
 
     
