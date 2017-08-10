@@ -4,7 +4,9 @@ import datetime
 import json
 from ext.formatter import EmbedHelp
 import inspect
-
+data = {}
+token = ''
+prefix = ''
 def run_wizard():
     print('------------------------------------------')
     print('WELCOME TO THE VERIX-SELFBOT SETUP WIZARD!')
@@ -59,14 +61,17 @@ _extensions = [
 @bot.event
 async def on_ready():
     bot.uptime = datetime.datetime.now()
-    print('------------------------------------------\n'
-    	  'Self-Bot Ready\n'
-    	  'Author: verix#7220\n'
-    	  '------------------------------------------\n'
-    	  'Username: {}\n'
-          'User ID: {}\n'
-          '------------------------------------------'
-    	  .format(bot.user, bot.user.id))
+    x =   [
+        '------------------------------------------',
+        'Self-Bot Ready',
+        'Author: verix#7220',
+        'Some Cogs/Cmds By: Dino#0631',
+        '------------------------------------------',
+        'Username: {}'.format(bot.user),
+        'User ID: {}'.format(bot.user.id),
+        '------------------------------------------'
+    ]
+    print('\n'.join(x))
 
 
 
@@ -240,6 +245,7 @@ async def load(ctx, exten=None):
 
 @bot.command(pass_context=True)
 async def source(ctx, *, command):
+    await bot.delete_message(ctx.message)
     await bot.say('```py\n'+str(inspect.getsource(bot.get_command(command).callback)+'```'))
 
 
@@ -255,4 +261,5 @@ try:
     bot.run(TOKEN, bot=False)
 except:
     print('\nIMPROPER TOKEN PASSED\nCHECK YOUR `config.json`\n')
+
     

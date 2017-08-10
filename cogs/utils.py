@@ -484,6 +484,9 @@ class Utility:
                 msg = first_entry
 
             await self.bot.say(msg)
+
+    #commands by Dino#0631
+
     @commands.command(pass_context=True, aliases=['googlecalc', 'gcal', 'calc'])
     async def gcalc(self, ctx,*, query):
         """Searches google and gives you top result."""
@@ -513,6 +516,98 @@ class Utility:
         await self.bot.delete_message(message)
 
         return
+
+
+
+    @commands.command(pass_context=True)
+    async def edit(self, ctx, *msg):
+        '''edit your previous message 
+        works up to 20 messages ago'''
+        msg = list(msg)
+        msg = ' '.join(msg)
+        channel = ctx.message.channel
+        # use the 2nd last message because the last message would be the command
+        messages = []
+        async for m in self.bot.logs_from(channel, limit=20):
+            messages.append(m)
+        for  m in messages[1:]:
+            if m.author.id == ctx.message.author.id:
+                message = m
+                break
+        if msg == None:
+            msg = message.content
+        print('{}')
+        msg = msg.replace('{}', message.content)
+        await self.bot.delete_message(ctx.message)
+        await self.bot.edit_message(message, new_content=msg)
+
+    @commands.command(pass_context=True)
+    async def replace(self, ctx, old, *newphrase):
+        '''replace one phrase to another in your previous message 
+        works up to 20 messages ago'''
+        new = list(newphrase)
+        new = ' '.join(new)
+        channel = ctx.message.channel
+        # use the 2nd last message because the last message would be the command
+        messages = []
+        async for m in self.bot.logs_from(channel, limit=20):
+            messages.append(m)
+        for  m in messages[1:]:
+            if m.author.id == ctx.message.author.id :
+                message = m
+                break
+        msg =  message.content.replace(old, new)
+        await self.bot.delete_message(ctx.message)
+        await self.bot.edit_message(message, new_content=msg)
+
+    @commands.command(pass_context=True)
+    async def reverse(self, ctx):
+        '''reverse your previous message 
+        works up to 20 messages ago'''
+        channel = ctx.message.channel
+        # use the 2nd last message because the last message would be the command
+        messages = []
+        async for m in self.bot.logs_from(channel, limit=20):
+            messages.append(m)
+        for  m in messages[1:]:
+            if m.author.id == '222925389641547776':
+                message = m
+                break
+
+        await self.bot.delete_message(ctx.message)
+        await self.bot.edit_message(message, new_content=message.content[::-1])
+
+    @commands.command(pass_context=True)
+    async def merge(self, ctx, msgs:int, join_with='\n'):
+        if msgs>10:
+            msgs = 10
+        elif msgs < 2:
+            msg  = await self.bot.say('can only merge 2 or more messages')
+            await asyncio.sleep(2)
+            await self.bot.delete_message(msg)
+            return
+        channel = ctx.message.channel
+        messages = []
+        await self.bot.delete_message(ctx.message)
+        n = 0
+        async for m in self.bot.logs_from(channel, limit=2*msgs+10):
+            if n < msgs:
+                pass
+            else:
+                break
+            if m.author.id == ctx.message.author.id:
+                messages.append(m)
+            n += 1
+
+        pastmsgs = []
+        for m in list(reversed(messages)):
+            pastmsgs.append(m.content)
+        newmsg = join_with.join(pastmsgs)
+        for m in messages[1:]:
+            await self.bot.delete_message(m)
+        await self.bot.edit_message(messages[0], new_content=newmsg)
+
+
 
 
 def setup(bot):

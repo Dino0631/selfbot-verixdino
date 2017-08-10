@@ -12,12 +12,130 @@ from bs4 import BeautifulSoup
 from __main__ import send_cmd_help
 import string
 import aiohttp
+from urllib.parse import quote_plus
+
+
+
+def escape(text, *, mass_mentions=False, formatting=False):
+    if mass_mentions:
+        text = text.replace("@everyone", "@\u200beveryone")
+        text = text.replace("@here", "@\u200bhere")
+    if formatting:
+        text = (text.replace("`", "\\`")
+                    .replace("*", "\\*")
+                    .replace("_", "\\_")
+                    .replace("~", "\\~"))
+    return text
+
+
+def escape_mass_mentions(text):
+    return escape(text, mass_mentions=True)
+
+def pagify(text, delims=["\n"], *, escape=True, shorten_by=8,
+           page_length=2000):
+    """DOES NOT RESPECT MARKDOWN BOXES OR INLINE CODE"""
+    in_text = text
+    if escape:
+        num_mentions = text.count("@here") + text.count("@everyone")
+        shorten_by += num_mentions
+    page_length -= shorten_by
+    while len(in_text) > page_length:
+        closest_delim = max([in_text.rfind(d, 0, page_length)
+                             for d in delims])
+        closest_delim = closest_delim if closest_delim != -1 else page_length
+        if escape:
+            to_send = escape_mass_mentions(in_text[:closest_delim])
+        else:
+            to_send = in_text[:closest_delim]
+        yield to_send
+        in_text = in_text[closest_delim:]
+
+    if escape:
+        yield escape_mass_mentions(in_text)
+    else:
+        yield in_text
 
 class Stuff():
 
 
     def __init__(self, bot):
         self.bot = bot
+
+    # @commands.command(pass_context=True)
+    # async def command_name(self, ctx):
+    #     '''custom command'''
+    #     await self.bot.say("custom command words!")
+
+    @commands.command(pass_context=True)
+    async def urban(self,ctx, *, search_terms : str, definition_number : int=1):
+        """Urban Dictionary search
+
+        Definition number must be between 1 and 10"""
+        await self.bot.edit_message(ctx.message, new_content=search_terms + ':')
+        def encode(s):
+            return quote_plus(s, encoding='utf-8', errors='replace')
+
+        # definition_number is just there to show up in the help
+        # all this mess is to avoid forcing double quotes on the user
+
+        search_terms = search_terms.split(" ")
+        try:
+            if len(search_terms) > 1:
+                pos = int(search_terms[-1]) - 1
+                search_terms = search_terms[:-1]
+            else:
+                pos = 0
+            if pos not in range(0, 11): # API only provides the
+                pos = 0                 # top 10 definitions
+        except ValueError:
+            pos = 0
+
+        search_terms = "+".join([encode(s) for s in search_terms])
+        url = "http://api.urbandictionary.com/v0/define?term=" + search_terms
+        # try:
+        async with aiohttp.get(url) as r:
+            result = await r.json()
+        if result["list"]:
+            definition = result['list'][pos]['definition']
+            example = result['list'][pos]['example']
+            defs = len(result['list'])
+            msg = ("**Definition #{} out of {}:**\n{}\n\n"
+                   "**Example:**\n{}".format(pos+1, defs, definition,
+                                             example))
+            msg = pagify(msg, ["\n"])
+            pages = []
+            for page in msg:
+                x = page.split('\n')
+                pages.extend(x)
+            em = discord.Embed(color=discord.Color(0xE86222))
+            em.set_author(name="Urban Dictionary", icon_url='http://i.imgur.com/6nJnuM4.png', url='http://www.urbandictionary.com/')
+            n = 0
+            prevn = n
+            lastfieldname = ''
+            lastfieldval = ''
+            for x in pages:
+                if x.startswith('**'):
+                    lastfieldname = x.replace('**','')
+                    em.add_field(name=lastfieldname, value='lol')
+                    n += 1
+                else:
+                    if n == prevn:
+                        lastfieldval += x
+                    else:
+                        prevn = n
+                        lastfieldval = x
+                    # print("hi")
+                    # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
+                    em.set_field_at(n-1, name=lastfieldname, value=lastfieldval)
+                    # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
+                    # print("hi2")
+            await self.bot.say(embed=em)
+        else:
+            await self.bot.say("Your search terms gave no results.")
+        # except IndexError:
+        #     await self.bot.say("There is no definition #{}".format(pos+1))
+        # except:
+        #     await self.bot.say("Error.")
 
     @commands.command(pass_context=True)
     async def test(self, ctx):
@@ -34,6 +152,21 @@ class Stuff():
             ":angry: :rage: :rage: :rage: :angry:\n"+
             ":rage: :angry: :rage: :angry: :rage:\n"+
             ":angry: :rage: :angry: :rage: :angry:")
+
+    @commands.command(pass_context=True)
+    async def smlirl(self, ctx):
+        '''sml'''
+        await self.bot.delete_message(ctx.message)
+        l = [
+            ':angry::rage::rage::rage::angry::rage::angry::angry::angry::rage::angry::rage::angry::angry::angry::angry:',
+            ':angry::rage::angry::angry::angry::rage::rage::angry::rage::rage::angry::rage::angry::angry::angry::angry:',
+            ':angry::rage::rage::rage::angry::rage::angry::rage::angry::rage::angry::rage::angry::angry::angry::angry:',
+            ':angry::angry::angry::rage::angry::rage::angry::angry::angry::rage::angry::rage::angry::angry::angry::angry:',
+            ':angry::rage::rage::rage::angry::rage::angry::angry::angry::rage::angry::rage::rage::rage::rage::angry:'
+        ]
+        msg = '\n'.join(l)
+        await self.bot.say(msg)
+
 
     @commands.command(pass_context=True)
     async def dad(self, ctx):
@@ -59,63 +192,6 @@ class Stuff():
                 woodBM = e
         await self.bot.say(":poop: :fire: :poop: :fire: :poop:\n:fire: {} :fire: {} :fire:\n:poop: :fire: {} :fire: :poop:\n:fire: {} :fire: {} :fire:\n:poop: :fire: :poop: :fire: :poop:".format(gitgud, gitgud, woodBM, gitgud, gitgud))
 
-    @commands.command(pass_context=True)
-    async def edit(self, ctx, *msg):
-        '''edit your previous message 
-        works up to 20 messages ago'''
-        msg = list(msg)
-        msg = ' '.join(msg)
-        channel = ctx.message.channel
-        # use the 2nd last message because the last message would be the command
-        messages = []
-        async for m in self.bot.logs_from(channel, limit=20):
-            messages.append(m)
-        for  m in messages[1:]:
-            if m.author.id == ctx.message.author.id:
-                message = m
-                break
-        if msg == None:
-            msg = message.content
-        print('{}')
-        msg = msg.replace('{}', message.content)
-        await self.bot.delete_message(ctx.message)
-        await self.bot.edit_message(message, new_content=msg)
-
-    @commands.command(pass_context=True)
-    async def replace(self, ctx, old, *newphrase):
-        '''replace one phrase to another in your previous message 
-        works up to 20 messages ago'''
-        new = list(newphrase)
-        new = ' '.join(new)
-        channel = ctx.message.channel
-        # use the 2nd last message because the last message would be the command
-        messages = []
-        async for m in self.bot.logs_from(channel, limit=20):
-            messages.append(m)
-        for  m in messages[1:]:
-            if m.author.id == ctx.message.author.id :
-                message = m
-                break
-        msg =  message.content.replace(old, new)
-        await self.bot.delete_message(ctx.message)
-        await self.bot.edit_message(message, new_content=msg)
-
-    @commands.command(pass_context=True)
-    async def reverse(self, ctx):
-        '''reverse your previous message 
-        works up to 20 messages ago'''
-        channel = ctx.message.channel
-        # use the 2nd last message because the last message would be the command
-        messages = []
-        async for m in self.bot.logs_from(channel, limit=20):
-            messages.append(m)
-        for  m in messages[1:]:
-            if m.author.id == '222925389641547776':
-                message = m
-                break
-
-        await self.bot.delete_message(ctx.message)
-        await self.bot.edit_message(message, new_content=message.content[::-1])
 
     clock_position = list(
         ['█',
@@ -192,6 +268,21 @@ class Stuff():
         em.set_author(name="ABE", icon_url="https://cdn.discordapp.com/avatars/218790601318072321/0b047729ae9b8d46f559b6b492ee66df.webp?size=1024")
         em.set_thumbnail(url="https://cdn.discordapp.com/avatars/218790601318072321/0b047729ae9b8d46f559b6b492ee66df.webp?size=1024")
         await self.bot.say(embed=em)
+
+    @commands.command(pass_context=True)
+    async def bday(self, ctx, user:discord.Member=None):
+        await self.bot.delete_message(ctx.message)
+        author = ctx.message.author
+        if user == None:
+            mention = '<@!218790601318072321>'
+        else:
+            mention = user.mention
+        em = discord.Embed(color=discord.Color(0x00bb00), description="[I wish you a happy birthday {}!](https://cdn.discordapp.com/emojis/313410780286681089.png)".format(mention))
+        name = author.name if author.nick == None else author.nick
+        em.set_author(name=name, icon_url=author.avatar_url)
+        em.set_thumbnail(url='https://d1yn1kh78jj1rr.cloudfront.net/preview/birthday-balloons-with-rainbow-and-clouds_f1GfDFFd_M.jpg')
+        await self.bot.say(embed=em)
+
 
     @commands.command(pass_context=True)
     async def flip(self, ctx, user):

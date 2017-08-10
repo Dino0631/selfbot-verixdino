@@ -6,6 +6,7 @@ import random
 import asyncio
 import json
 from ext.commands import Bot
+from fuzzywuzzy import fuzz
 from __main__ import send_cmd_help
 
 class CannotPaginate(Exception):
@@ -367,21 +368,41 @@ class Info():
         await self.bot.say(embed=emb)
 
     @commands.command(pass_context=True)
-    async def help(self, ctx, *, cmd = None):
+    async def help(self, ctx, cog = None):
         """Shows listed help message."""
         author = ctx.message.author
-        pages = self.bot.formatter.format_help_for(ctx, self.bot, 3)
+        await self.bot.delete_message(ctx.message)
         n = 0
-        for page in pages:
-            try:
-                if(n!=0):
-                    page.set_author(name='', url='')
-                if(n!=len(pages)-1):
-                    page.set_footer(text='')
-                await self.bot.say(embed=page)
-                n += 1
-            except:
-                await self.bot.say('I need the embed links perm.')
+        if cog == None:
+            pages = self.bot.formatter.format_help_for(ctx, self.bot, 3)
+            for page in pages:
+                try:
+                    if(n!=0):
+                        page.set_author(name='', url='')
+                    if(n!=len(pages)-1):
+                        page.set_footer(text='')
+                    await self.bot.say(embed=page)
+                    n += 1
+                except:
+                    await self.bot.say('I need the embed links perm.')
+        else:
+            pages = self.bot.formatter.format_help_for(ctx, self.bot, 1)
+            cog = cog.lower()
+            maxfuzrat = 0
+            bestmatch = pages[0]
+            currentfuzrat = 0
+            for page in pages:
+                pagecog = page.to_dict()['fields'][0]['name'] # cog name of page
+                pagecog = pagecog[:-1].lower() #remove the colon and make it lowercase
+                if '\u200b' in pagecog:
+                    pagecog.replace('\u200b', '')
+                currentfuzrat = fuzz.ratio(cog, pagecog)
+                if  currentfuzrat > maxfuzrat:
+                    # print("page cog: {}\nsearch cog: {}\nfuzz ratio: {}".format(pagecog, cog, currentfuzrat))
+                    maxfuzrat = currentfuzrat
+                    bestmatch = page
+            await self.bot.say(embed=bestmatch)
+
 
     # @commands.command(pass_context=True)
     # async def help2(self, ctx, *, cmd = None):

@@ -287,7 +287,6 @@ class EmbedHelp(HelpFormatter):
         list
             A paginated output of the help command.
         """
-        print(categs_per_page)
         self.context = context
         self.command = command_or_bot
         return self.format(context, categs_per_page)
@@ -302,7 +301,6 @@ class EmbedHelp(HelpFormatter):
         list
             A paginated output of the help command.
         """
-        print(categs_per_page)
         self._paginator = Paginator()
 
         # we need a padding of ~80 or so
