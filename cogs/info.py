@@ -480,7 +480,6 @@ class Info():
             em = page2
 
             # print('hi3')
-            print('hi3')
             for x in em['fields']:
                 line.append('**'+x['name']+'**') #append the cog heading
                 # print('hi3.1')

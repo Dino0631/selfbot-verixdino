@@ -4,7 +4,15 @@ import datetime
 import json
 from ext.formatter import EmbedHelp
 import inspect
+import os
 data = {}
+defaultdata = {
+"BOT": {
+    "TOKEN" : 'insert token here',
+    "PREFIX" : 's.'
+    },
+"FIRST" : True
+}
 token = ''
 prefix = ''
 def run_wizard():
@@ -14,6 +22,8 @@ def run_wizard():
     token = input('Enter your token:\n> ')
     print('------------------------------------------')
     prefix = input('Enter a prefix for your selfbot:\n> ')
+    if prefix == '':
+        prefix = 's.'
     data = {
         "BOT": {
             "TOKEN" : token,
@@ -27,6 +37,14 @@ def run_wizard():
     print('Successfully saved your data!')
     print('------------------------------------------')
     
+if not os.path.exists('data'):
+    os.makedirs('data')
+
+try:
+    open('data/config.json')
+except:
+    with open('data/config.json','w+') as f:
+        f.write(json.dumps(defaultdata, indent=4))
 
 with open('data/config.json') as f:
     if json.load(f)['FIRST']:
@@ -261,6 +279,5 @@ try:
     bot.run(TOKEN, bot=False)
 except:
     print('\nIMPROPER TOKEN PASSED\nCHECK YOUR `config.json`\n')
-    #lololololololololol
 
     
