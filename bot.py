@@ -42,6 +42,18 @@ print(os.environ)
 if 'DYNO_RAM' in os.environ:
     heroku = True
     TOKEN = os.environ['TOKEN']  
+    if not os.path.exists('data'):
+        os.makedirs('data')
+
+    try:
+        open('data/config.json')
+    except:
+        with open('data/config.json','w+') as f:
+            f.write(json.dumps(defaultdata, indent=4))
+            
+    with open('data/config.json') as f:  
+        TOKEN = json.load(f)["BOT"]['TOKEN']
+
 else:   
     if not os.path.exists('data'):
         os.makedirs('data')
