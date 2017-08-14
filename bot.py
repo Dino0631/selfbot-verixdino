@@ -41,7 +41,7 @@ print("penis")
 print(os.environ)
 if 'DYNO_RAM' in os.environ:
     heroku = True
-    TOKEN = os.environ['TOKEN']  
+    # TOKEN = os.environ['TOKEN']  
     if not os.path.exists('data'):
         os.makedirs('data')
 

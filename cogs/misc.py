@@ -39,7 +39,7 @@ class Misc():
         color = discord.Color(0x50d2fe)
         if message:
             msg = ctx.message
-            emb = discord.Embed(color=color,title=message)
+            emb = discord.Embed(color=color,description=message)
             await self.bot.delete_message(msg)
             await self.bot.say(embed=emb)
         else:
