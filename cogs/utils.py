@@ -590,14 +590,14 @@ class Utility:
         messages = []
         await self.bot.delete_message(ctx.message)
         n = 0
-        async for m in self.bot.logs_from(channel, limit=2*msgs+10):
+        async for m in self.bot.logs_from(channel, limit=2*msgs+50):
             if n < msgs:
                 pass
             else:
                 break
             if m.author.id == ctx.message.author.id:
                 messages.append(m)
-            n += 1
+                n += 1
 
         pastmsgs = []
         for m in list(reversed(messages)):
