@@ -121,6 +121,7 @@ class Stuff():
                 else:
                     if n == prevn:
                         lastfieldval += x
+                        lastfieldval +='\n'
                     else:
                         prevn = n
                         lastfieldval = x
@@ -140,7 +141,7 @@ class Stuff():
     @commands.command(pass_context=True)
     async def test(self, ctx):
         em =  discord.Embed()
-        em.set_image(url='https://www.youtube.com/watch?v=kLAjLORLMHk')
+        em.set_image(url='')
         await self.bot.say(embed=em)
 
     @commands.command(pass_context=True)
