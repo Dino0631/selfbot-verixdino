@@ -36,10 +36,10 @@ def run_wizard():
     print('------------------------------------------')
     print('Successfully saved your data!')
     print('------------------------------------------')
-
+heroku = False
 print("penis")
 print(os.environ)
-if 'TOKEN' in os.environ:
+if 'DYNO_RAM' in os.environ:
     heroku = True
     TOKEN = os.environ['TOKEN']  
 else:   
