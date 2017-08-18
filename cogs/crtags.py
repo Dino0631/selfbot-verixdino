@@ -140,21 +140,18 @@ class Player:
         """Save user tag. If not given a user, save tag to author"""
         racfaudits = self.bot.get_channel('268769178234781696')
         await self.bot.send_message(racfaudits, '!crclan roster '+clan)
+        asyncio.sleep(2.5)
         messages = []
         async for m in self.bot.logs_from(racfaudits, limit=10):
             if(m.author.id == '280936035536338945'):
                 messages.append(m)
-        print(messages)
         messages = messages[:2]
-        print(messages)
-        for m in messages:
-            print(m.id)
+        # for m in messages:
         # print(messages)
         # await self.bot.say()
         playerids = []
         playertags = []
         for index, message in enumerate(messages):
-            print(index, ' beans')
             for i, person in enumerate(messages[index].embeds[0]['fields']):
                 messages[index].embeds[0]['fields'][i]['name'] =  ''
             for i, person in enumerate(messages[index].embeds[0]['fields']):
@@ -170,6 +167,7 @@ class Player:
                     playertags.append(value[value.find('#')+len('#'):])
                 except:
                     pass
+        print(260577636957421568 in playerids)
         print(playerids)
         print(playertags)
         for x in range(0, len(playerids)):
@@ -411,6 +409,7 @@ class Player:
     @clashroyale.command(name='trophy',aliases=['tr'],pass_context=True)
     async def _trophy(self, ctx, user: discord.Member=None):
         """Get user trophies. If not given a user, get author's data"""
+        print()
         tags = dataIO.load_json(SETTINGS_JSON)
         if user == None:
             user = ctx.message.author
@@ -422,6 +421,7 @@ class Player:
         button = []
         battleButton = ""
         await self.async_refresh('http://statsroyale.com/profile/'+tags[user.id]+'/refresh')
+        asyncio.sleep(1)
         r = requests.get(user_url, headers=headers)
         html_doc = r.content
         soup = BeautifulSoup(html_doc, "html.parser")
