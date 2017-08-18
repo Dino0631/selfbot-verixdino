@@ -58,7 +58,7 @@ class Player:
             return response
 
     async def refresh(self, tag):
-        await self.async_refresh('http://statsroyale.com/profile/'+tag+'/refresh')
+        await self.async_refresh('http://statsroyale.com/profile/'+tags[user.id]+'/refresh')
 
     @commands.command(pass_context=True)
     async def myid(self, ctx, user: discord.Member):

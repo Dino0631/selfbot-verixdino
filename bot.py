@@ -39,18 +39,7 @@ def run_wizard():
 heroku = False
 if 'DYNO_RAM' in os.environ:
     heroku = True
-    # TOKEN = os.environ['TOKEN']  
-    if not os.path.exists('data'):
-        os.makedirs('data')
-
-    try:
-        open('data/config.json')
-    except:
-        with open('data/config.json','w+') as f:
-            f.write(json.dumps(defaultdata, indent=4))
-            
-    with open('data/config.json') as f:  
-        TOKEN = json.load(f)["BOT"]['TOKEN']
+    TOKEN = os.environ['TOKEN'] 
 
 else:   
     if not os.path.exists('data'):
@@ -70,6 +59,10 @@ else:
         TOKEN = json.load(f)["BOT"]['TOKEN']
 
 async def get_pre(bot, message):
+
+    if 'PREFIX' in os.environ:
+        return os.environ['PREFIX']
+        
     with open('data/config.json') as f:
         config = json.load(f)
     try:
