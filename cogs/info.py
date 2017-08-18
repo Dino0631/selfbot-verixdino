@@ -561,16 +561,18 @@ class Info():
 
         useremojis = list(emojis)
         new_emojis = []
-        
-        for e in useremojis:
-            lastlist = new_emojis
-            for x in server.emojis:
-                ename = e[e.find(':') + 1 : e.rfind(':')]
-                # await self.bot.say("{} == {}".format(x.name, ename))
-                if(x.name == ename):
-                    new_emojis.append(x)
-            if(lastlist == new_emojis):
-                new_emojis.append(e)
+        if(server == None):
+            new_emojis.extend(useremojis)
+        else:
+            for e in useremojis:
+                lastlist = new_emojis
+                for x in server.emojis:
+                    ename = e[e.find(':') + 1 : e.rfind(':')]
+                    # await self.bot.say("{} == {}".format(x.name, ename))
+                    if(x.name == ename):
+                        new_emojis.append(x)
+                if(lastlist == new_emojis):
+                    new_emojis.append(e)
 
          # await self.bot.say(len(new_emojis[0]))
 

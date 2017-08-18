@@ -65,7 +65,9 @@ class Stuff():
     # async def command_name(self, ctx):
     #     '''custom command'''
     #     await self.bot.say("custom command words!")
-
+    # @commands.command()
+    # async def lmao(self):
+    #     await self.bot.say('dont do tis')
     @commands.command(pass_context=True)
     async def urban(self,ctx, *, search_terms : str, definition_number : int=1):
         """Urban Dictionary search

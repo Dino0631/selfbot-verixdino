@@ -13,6 +13,7 @@ from contextlib import redirect_stdout
 import io
 import aiohttp
 from lxml import etree
+from mtranslate import translate
 
 class Utility:
     def __init__(self, bot):
@@ -29,6 +30,12 @@ class Utility:
             await self.bot.say('Changed nickname to: `{}`'.format(nick), delete_after=5)
         except:
             await self.bot.say('Unable to change nickname.', delete_after=5)
+            
+    @commands.command(pass_context=True, aliases=['t'])     
+    async def translate(self, ctx, lang, *, text):
+        """Translate text!"""       
+        result = translate(text, lang)      
+        await self.bot.say('```{}```'.format(result))   
 
     @commands.command(pass_context=True)
     async def raw(self, ctx, ID, chan : discord.channel=None):
@@ -606,8 +613,6 @@ class Utility:
         for m in messages[1:]:
             await self.bot.delete_message(m)
         await self.bot.edit_message(messages[0], new_content=newmsg)
-
-
 
 
 def setup(bot):

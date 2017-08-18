@@ -37,8 +37,6 @@ def run_wizard():
     print('Successfully saved your data!')
     print('------------------------------------------')
 heroku = False
-print("penis")
-print(os.environ)
 if 'DYNO_RAM' in os.environ:
     heroku = True
     # TOKEN = os.environ['TOKEN']  
@@ -84,13 +82,14 @@ bot.remove_command('help')
 
 _extensions = [
 
+    # 'cogs.clashroyale',
     'cogs.misc',
-    'cogs.info',
     'cogs.utils',
+    'cogs.info',
     'cogs.mod',
     'cogs.stuff',
     'cogs.react',
-    'cogs.cr',
+    'cogs.crtags',
     'cogs.trophy'
     ]
 
