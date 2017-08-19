@@ -121,6 +121,29 @@ class Player:
             dataIO.save_json(SETTINGS_JSON, self.settings)
         else:
             await self.bot.say("Invalid tag {}, it must only have the following characters {}".format(ctx.message.author.mention, validChars))
+    @commands.command(pass_context=True)
+    async def initall(self, ctx):
+        racfserver = self.bot.get_server('218534373169954816')
+        auditchannel = self.bot.get_channel('268769178234781696')
+        for member in racfserver.members:
+            await self.bot.send_message(auditchannel, '!crprofile gettag '+member.id)
+            await asyncio.sleep(1)
+            messages = []
+            async for m in self.bot.logs_from(auditchannel, limit=10):
+                if(m.author.id == '280936035536338945'):
+                    messages.append(m)
+                    break
+            message = messages[0].content
+            if(message.find('#') == -1):
+                pass
+            else:
+                tag = message[message.find('#')+1:]
+                self.settings[str(member.id)] = tag
+
+                # await self.bot.send_message(auditchannel, member.display_name + ' ' + tag)
+            await asyncio.sleep(2)
+        dataIO.save_json(SETTINGS_JSON, self.settings)
+
 
     @commands.command(pass_context=True)
     async def racfinitall(self, ctx):

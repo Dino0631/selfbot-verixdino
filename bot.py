@@ -77,7 +77,7 @@ _extensions = [
 
     # 'cogs.clashroyale',
     'cogs.misc',
-    'cogs.utils',
+    'cogs.utility',
     'cogs.info',
     'cogs.mod',
     'cogs.stuff',
