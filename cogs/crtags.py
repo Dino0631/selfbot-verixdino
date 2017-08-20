@@ -233,26 +233,20 @@ class Player:
         #     pass
         # driver.close()
 
-    @commands.group(aliases=["stats"], pass_context=True, no_pm=True)
+    @commands.group(aliases=["stats"], pass_context=True)
     async def clashroyale(self, ctx):
         """Display CR profiles."""
         if ctx.invoked_subcommand is None:
             await send_cmd_help(ctx)
 
     @clashroyale.command(pass_context=True)
-    async def profile(self, ctx, user: discord.Member=None):
+    async def tagprofile(self, ctx, tag):
         """Get user profile. If not given a user, get author's profile"""
-        tags = dataIO.load_json(SETTINGS_JSON)
-        if user == None:
-            user = ctx.message.author
-        try:
-            user_url = (statscr_url+ tags[user.id])
-        except(KeyError):
-            await self.bot.say("{} does not have a tag set.".format(user.display_name))
-            return
+        tag = tag.upper()
+        user_url = (statscr_url+ tag)
         button = []
         battleButton = ""
-        await self.async_refresh('http://statsroyale.com/profile/'+tags[user.id]+'/refresh')
+        await self.async_refresh('http://statsroyale.com/profile/'+tag+'/refresh')
         r = requests.get(user_url, headers=headers)
         html_doc = r.content
         soup = BeautifulSoup(html_doc, "html.parser")
@@ -310,6 +304,128 @@ class Player:
             x += 2
         chests = []
         # print(new_chests)
+
+
+        for index, chest in enumerate(new_chests):
+            chests.append(': '.join(chest))
+
+        chests = '\n'.join(chests)
+
+        soup = BeautifulSoup(html_doc, "html.parser")
+        profilehead = soup.find_all("div", "profileHeader profile__header")
+        statistics = soup.find_all("div", "statistics profile__statistics")
+        profilehead = profilehead[0]
+        statistics = statistics[0]
+        thing2 = statistics.get_text()
+        thing2 = thing2.replace('\n', ' ')
+        thing2 = thing2.split('   ')
+        for index, item in enumerate(thing2):
+            thing2[index] = item.strip()
+        statsdict = {}
+        for index, item in enumerate(thing2):
+            if item[:item.find(' ')].isdigit():
+                thing2[index] = item[item.find(' ')+1:]+ ': '+item[:item.find(' ')]
+                statsdict[item[item.find(' ')+1:].strip()] = item[:item.find(' ')] 
+            else:
+                statsdict[item.strip()] = ' '
+            thing2[index].strip()
+
+        pb = thing2[0]
+        trophy = thing2[1]
+        cardswon = thing2[2]
+        tcardswon = thing2[3]
+        donations = thing2[4]
+        prevseasonrank = thing2[5]
+        prevseasontrophy = thing2[6]
+        prevseasonpb = thing2[7]
+        wins = thing2[8]
+        losses = thing2[9]
+        crown3 = thing2[10]
+        league = thing2[11]
+        # thing3 = []
+        # a  = ''
+        # for x in thing2:
+        #     a += ''
+        clan_url = statsurl + str(profilehead.find('a').attrs['href'])
+        playerLevel = profilehead.find('span', 'profileHeader__userLevel')
+        playerLevel = playerLevel.text
+        playerName = profilehead.find('div', 'ui__headerMedium profileHeader__name').text.strip()
+        playerName = playerName.replace(playerLevel, '').strip()
+        playerClan = profilehead.find('a', 'ui__link ui__mediumText profileHeader__userClan').text.strip()
+        playerTag = tag
+        player_data = []
+        player_data.append('[#{}]({})'.format(tag, user_url))
+        player_data.append('Level {}'.format(playerLevel))
+        player_data.append('Clan: [{}]({})'.format(playerClan, clan_url))
+        for x in statsdict:
+            if(statsdict[x].isdigit()):
+                statsdict[x] = '[' + statsdict[x] + '](nothing)'
+        for x in statsdict:
+            if(x=='Prev season rank' and statsdict[x]=='0'):
+                pass
+            elif(statsdict[x]==' '):
+                a = x
+                a = a.replace('crown', 'crown👑')
+                player_data.append(a)
+            else:
+                a = x+': '+statsdict[x]
+                a = a.replace('crown', 'crown👑')
+                if 'troph' in a:
+                    a += '🏆'
+                player_data.append(a)
+        # player_data.append(chests)
+        clan_badge = profilehead.find('img').attrs['src']
+        clan_badge = statsurl + clan_badge
+        if clan_badge == 'http://statsroyale.com/images/badges/16000167.png':
+            clan_badge = 'http://cr-api.com/badge/A_Char_Rocket_02.png'
+        em = discord.Embed(title=playerName, description='\n'.join(player_data),color = discord.Color(0x50d2fe))
+        # em.set_author(icon_url=user.avatar_url,name=user.display_name)
+        em.set_thumbnail(url=clan_badge)
+        em.set_footer(text='Data provided by StatsRoyale', icon_url='http://i.imgur.com/17R3DVU.png')
+        await self.bot.say(embed=em)
+
+    @clashroyale.command(pass_context=True)
+    async def profile(self, ctx, user: discord.Member=None):
+        """Get user profile. If not given a user, get author's profile"""
+        tags = dataIO.load_json(SETTINGS_JSON)
+        if user == None:
+            user = ctx.message.author
+        try:
+            user_url = (statscr_url+ tags[user.id])
+        except(KeyError):
+            await self.bot.say("{} does not have a tag set.".format(user.display_name))
+            return
+        button = []
+        battleButton = ""
+        await self.async_refresh('http://statsroyale.com/profile/'+tags[user.id]+'/refresh')
+        r = requests.get(user_url, headers=headers)
+        html_doc = r.content
+        soup = BeautifulSoup(html_doc, "html.parser")
+        statsurl = 'http://statsroyale.com'
+        html_doc = r.content
+        chests_queue = soup.find('div', {'class':'chests__queue'})
+        chests = chests_queue.get_text().split()
+        for index, item in enumerate(chests):
+            if item.startswith('+') and item.endswith(':'):
+                del chests[index]
+            elif item == 'Chest':
+                del chests[index]
+            if item == 'Super':
+                chests[index] = 'SMC'
+            elif item == 'Magic':
+                chests[index] = 'Magical'
+
+        for index, chest in enumerate(chests):
+            if str(chest) == 'Magic':
+                chests[index] = 'Magical'
+            elif str(chest) == 'Super':
+                chests[index] = 'SMC'
+        new_chests = []
+        x = 0
+        while x<len(chests):
+            new_chests.append(chests[x:x+2])
+            x += 2
+        chests = []
 
 
         for index, chest in enumerate(new_chests):
