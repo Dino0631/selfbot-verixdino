@@ -82,7 +82,7 @@ _extensions = [
     'cogs.mod',
     'cogs.stuff',
     'cogs.react',
-    'cogs.crtags',
+    # 'cogs.crtags',
     'cogs.trophy'
     ]
 
@@ -277,6 +277,7 @@ async def load(ctx, exten=None):
 async def source(ctx, *, command):
     await bot.delete_message(ctx.message)
     await bot.say('```py\n'+str(inspect.getsource(bot.get_command(command).callback)+'```'))
+
 
 
 if __name__ == "__main__":  
