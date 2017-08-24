@@ -85,6 +85,78 @@ class Utility:
         result = BeautifulSoup(response, "lxml")
         url="**Result:**\nhttps://www.youtube.com{}".format(result.find_all(attrs={'class': 'yt-uix-tile-link'})[0].get('href'))
 
+        
+    @commands.command(pass_context=True)
+    async def urban(self,ctx, *, search_terms : str, definition_number : int=1):
+        """Urban Dictionary search
+
+        Definition number must be between 1 and 10"""
+        await self.bot.edit_message(ctx.message, new_content=search_terms + ':')
+        def encode(s):
+            return quote_plus(s, encoding='utf-8', errors='replace')
+
+        # definition_number is just there to show up in the help
+        # all this mess is to avoid forcing double quotes on the user
+
+        search_terms = search_terms.split(" ")
+        try:
+            if len(search_terms) > 1:
+                pos = int(search_terms[-1]) - 1
+                search_terms = search_terms[:-1]
+            else:
+                pos = 0
+            if pos not in range(0, 11): # API only provides the
+                pos = 0                 # top 10 definitions
+        except ValueError:
+            pos = 0
+
+        search_terms = "+".join([encode(s) for s in search_terms])
+        url = "http://api.urbandictionary.com/v0/define?term=" + search_terms
+        try:
+            async with aiohttp.get(url) as r:
+                result = await r.json()
+            if result["list"]:
+                definition = result['list'][pos]['definition']
+                example = result['list'][pos]['example']
+                defs = len(result['list'])
+                msg = ("**Definition #{} out of {}:**\n{}\n\n"
+                       "**Example:**\n{}".format(pos+1, defs, definition,
+                                                 example))
+                msg = pagify(msg, ["\n"])
+                pages = []
+                for page in msg:
+                    x = page.split('\n')
+                    pages.extend(x)
+                em = discord.Embed(color=discord.Color(0xE86222))
+                em.set_author(name="Urban Dictionary", icon_url='http://i.imgur.com/6nJnuM4.png', url='http://www.urbandictionary.com/')
+                n = 0
+                prevn = n
+                lastfieldname = ''
+                lastfieldval = ''
+                for x in pages:
+                    if x.startswith('**'):
+                        lastfieldname = x.replace('**','')
+                        em.add_field(name=lastfieldname, value='lol')
+                        n += 1
+                    else:
+                        if n == prevn:
+                            lastfieldval += x
+                            lastfieldval +='\n'
+                        else:
+                            prevn = n
+                            lastfieldval = x
+                        # print("hi")
+                        # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
+                        em.set_field_at(n-1, name=lastfieldname, value=lastfieldval)
+                        # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
+                        # print("hi2")
+                await self.bot.say(embed=em)
+            else:
+                await self.bot.say("Your search terms gave no results.")
+        except IndexError:
+            await self.bot.say("There is no definition #{}".format(pos+1))
+        except:
+            await self.bot.say("Error.")
         await self.bot.send_message(ctx.message.channel, url)
     def cleanup_code(self, content):
         """Automatically removes code blocks from the code."""

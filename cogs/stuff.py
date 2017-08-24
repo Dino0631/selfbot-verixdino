@@ -13,6 +13,36 @@ from __main__ import send_cmd_help
 import string
 import aiohttp
 from urllib.parse import quote_plus
+upgrades = {}
+upgrades['c'] = [
+    5,
+    20,
+    50,
+    150,
+    400,
+    1000,
+    2000,
+    4000,
+    8000,
+    20000,
+    50000,
+    100000
+]
+upgrades['r'] = upgrades['c'][2:]
+upgrades['e'] = upgrades['r'][3:]
+upgrades['e'][upgrades['e'].index(1000)] = 400
+upgrades['l'] = upgrades['e'][3:]
+upgrades['l'][upgrades['l'].index(8000)] = 5000
+for rarity in upgrades:
+    upgrades[rarity].insert(0, 0)
+
+
+# print(upgrades)
+totalupgrades = {}
+for rarity in upgrades:
+    totalupgrades[rarity] = []
+    for index, cost in enumerate(upgrades[rarity]):
+        totalupgrades[rarity].append(sum(upgrades[rarity][:index+1]))
 
 
 
@@ -68,77 +98,43 @@ class Stuff():
     # @commands.command()
     # async def lmao(self):
     #     await self.bot.say('dont do tis')
+
     @commands.command(pass_context=True)
-    async def urban(self,ctx, *, search_terms : str, definition_number : int=1):
-        """Urban Dictionary search
-
-        Definition number must be between 1 and 10"""
-        await self.bot.edit_message(ctx.message, new_content=search_terms + ':')
-        def encode(s):
-            return quote_plus(s, encoding='utf-8', errors='replace')
-
-        # definition_number is just there to show up in the help
-        # all this mess is to avoid forcing double quotes on the user
-
-        search_terms = search_terms.split(" ")
+    async def gold(self, ctx, *, args):
+        args = args.strip().split(' ')
+        while '' in args:
+            args.remove('')
+        for i, a in enumerate(args):
+            if a.isdigit():
+                args[i] = int(a)-1
+        totalgold = {'c':0,'r':0,'e':0,'l':0,}
+        allgold = 0
+        cardlvl = {}
+        if 'c' in args and 'r' in args:
+            cardlvl['c'] = args[args.index('c')+1:args.index('r')]
+        elif 'c' in args:
+            cardlvl['c'] = args[args.index('c')+1:]
+        if 'r' in args and 'e' in args:
+            cardlvl['r'] = args[args.index('r')+1:args.index('e')]
+        elif 'r' in args:
+            cardlvl['r'] = args[args.index('r')+1:]
+        if 'e' in args and 'l' in args:
+            cardlvl['e'] = args[args.index('e')+1:args.index('l')]
+        elif 'e' in args:
+            cardlvl['e'] = args[args.index('e')+1:]
+        if 'l' in args:
+            cardlvl['l'] = args[args.index('l')+1:]
+        print(cardlvl)
         try:
-            if len(search_terms) > 1:
-                pos = int(search_terms[-1]) - 1
-                search_terms = search_terms[:-1]
-            else:
-                pos = 0
-            if pos not in range(0, 11): # API only provides the
-                pos = 0                 # top 10 definitions
-        except ValueError:
-            pos = 0
-
-        search_terms = "+".join([encode(s) for s in search_terms])
-        url = "http://api.urbandictionary.com/v0/define?term=" + search_terms
-        # try:
-        async with aiohttp.get(url) as r:
-            result = await r.json()
-        if result["list"]:
-            definition = result['list'][pos]['definition']
-            example = result['list'][pos]['example']
-            defs = len(result['list'])
-            msg = ("**Definition #{} out of {}:**\n{}\n\n"
-                   "**Example:**\n{}".format(pos+1, defs, definition,
-                                             example))
-            msg = pagify(msg, ["\n"])
-            pages = []
-            for page in msg:
-                x = page.split('\n')
-                pages.extend(x)
-            em = discord.Embed(color=discord.Color(0xE86222))
-            em.set_author(name="Urban Dictionary", icon_url='http://i.imgur.com/6nJnuM4.png', url='http://www.urbandictionary.com/')
-            n = 0
-            prevn = n
-            lastfieldname = ''
-            lastfieldval = ''
-            for x in pages:
-                if x.startswith('**'):
-                    lastfieldname = x.replace('**','')
-                    em.add_field(name=lastfieldname, value='lol')
-                    n += 1
-                else:
-                    if n == prevn:
-                        lastfieldval += x
-                        lastfieldval +='\n'
-                    else:
-                        prevn = n
-                        lastfieldval = x
-                    # print("hi")
-                    # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
-                    em.set_field_at(n-1, name=lastfieldname, value=lastfieldval)
-                    # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
-                    # print("hi2")
-            await self.bot.say(embed=em)
-        else:
-            await self.bot.say("Your search terms gave no results.")
-        # except IndexError:
-        #     await self.bot.say("There is no definition #{}".format(pos+1))
-        # except:
-        #     await self.bot.say("Error.")
+            for rarity in cardlvl:
+                for lvl in cardlvl[rarity]:
+                    allgold += totalupgrades[rarity][lvl]
+                    totalgold[rarity] += totalupgrades[rarity][lvl]
+        except IndexError:
+            await self.bot.say("Invalid card level")
+        await self.bot.say("You have spent a total of {} gold on upgrading those cards".format(allgold))
+        # for rarity in totalgold:
+        #     await self.bot.say("You have spent a total of {} gold on upgrading {} cards".format(totalgold[rarity], rarity))
 
     @commands.command(pass_context=True)
     async def test(self, ctx):
