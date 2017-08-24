@@ -82,7 +82,7 @@ _extensions = [
     'cogs.mod',
     'cogs.stuff',
     'cogs.react',
-    # 'cogs.crtags',
+    'cogs.crtags',
     'cogs.trophy'
     ]
 
@@ -288,9 +288,9 @@ if __name__ == "__main__":
         except Exception as e:
             exc = '{}: {}'.format(type(e).__name__, e)
             print('Failed to load extension {}\n{}'.format(extension, exc))
-# try:
-bot.run(TOKEN, bot=False)
-# except:
-    # print('\nIMPROPER TOKEN PASSED\nCHECK YOUR `config.json`\n')
+try:
+    bot.run(TOKEN, bot=False)
+except:
+    print('\nIMPROPER TOKEN PASSED\nCHECK YOUR `config.json`\n')
 
     

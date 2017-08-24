@@ -702,6 +702,7 @@ class Player:
         self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
+        player_data.append('[{}]({})'.format(tags[user.id], user_url))
         # player_data.append(things.pb)
         player_data.append(things.trophy)
         # player_data.append(things.cardswon)
@@ -740,6 +741,7 @@ class Player:
         self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
+        player_data.append('[{}]({})'.format(tags[user.id], user_url))
         # player_data.append(things.pb)
         # player_data.append(things.trophy)
         # player_data.append(things.cardswon)
@@ -778,6 +780,7 @@ class Player:
         self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
+        player_data.append('[{}]({})'.format(tags[user.id], user_url))
         # player_data.append(things.pb)
         # player_data.append(things.trophy)
         player_data.append(things.cardswon)
@@ -816,6 +819,7 @@ class Player:
         self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
+        player_data.append('[{}]({})'.format(tags[user.id], user_url))
         player_data.append(things.pb)
         player_data.append(things.trophy)
         player_data.append(things.cardswon)
@@ -853,6 +857,7 @@ class Player:
         self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
+        player_data.append('[{}]({})'.format(tags[user.id], user_url))
         player_data.append(things.pb)
         # player_data.append(things.trophy)
         # player_data.append(things.cardswon)
