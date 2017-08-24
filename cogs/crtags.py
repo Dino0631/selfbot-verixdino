@@ -148,7 +148,6 @@ class CRPlayer:
         self.clan_badge = clan_badge
         player_data = []
         player_data.append('[#{}]({})'.format(tag, user_url))
-        print(statsdict)
         for x in statsdict:
             if(statsdict[x].isdigit()):
                 statsdict[x] = '[' + statsdict[x] + '](nothing)'

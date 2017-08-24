@@ -175,11 +175,19 @@ class Stuff():
     async def dad(self, ctx):
         '''6dad's emotions'''
         await self.bot.delete_message(ctx.message)
-        await self.bot.say(":6dad: :6dadw: :6dad: :6dadw: :6dad:\n"+
-            ":6dadw: :6dad: :6dadw: :6dad: :6dadw:\n"+
-            ":6dad: :6dadw: :rage: :6dadw: :6dad:\n"+
-            ":6dadw: :6dad: :6dadw: :6dad: :6dadw:\n"+
-            ":6dad: :6dadw: :6dad: :6dadw: :6dad:")
+        racfserver = self.bot.get_server('218534373169954816')
+        dad = ''
+        dadw = ''
+        for x in racfserver.emojis:
+            if x.name == '6dad':
+                dad = x
+            elif x.name == '6dadw':
+                dadw = x
+        await self.bot.say(("{0} {1} {0} {1} {0}\n"+
+            "{1} {0} {1} {0} {1}\n"+
+            "{0} {1} :rage: {1} {0}\n"+
+            "{1} {0} {1} {0} {1}\n"+
+            "{0} {1} {0} {1} {0}").format(dad, dadw))
 
     @commands.command(pass_context=True)
     async def firepoop(self, ctx):
