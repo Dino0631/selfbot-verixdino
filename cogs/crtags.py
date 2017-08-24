@@ -699,7 +699,7 @@ class Player:
         except(KeyError):
             await self.bot.say("{} does not have a tag set.".format(user.display_name))
             return
-        self.async_refresh(user_url+'/refresh')
+        await self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
         player_data.append('[{}]({})'.format(tags[user.id], user_url))
@@ -738,7 +738,7 @@ class Player:
         except(KeyError):
             await self.bot.say("{} does not have a tag set.".format(user.display_name))
             return
-        self.async_refresh(user_url+'/refresh')
+        await self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
         player_data.append('[{}]({})'.format(tags[user.id], user_url))
@@ -777,7 +777,7 @@ class Player:
         except(KeyError):
             await self.bot.say("{} does not have a tag set.".format(user.display_name))
             return
-        self.async_refresh(user_url+'/refresh')
+        await self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
         player_data.append('[{}]({})'.format(tags[user.id], user_url))
@@ -816,7 +816,7 @@ class Player:
         except(KeyError):
             await self.bot.say("{} does not have a tag set.".format(user.display_name))
             return
-        self.async_refresh(user_url+'/refresh')
+        await self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
         player_data.append('[{}]({})'.format(tags[user.id], user_url))
@@ -854,7 +854,7 @@ class Player:
         except(KeyError):
             await self.bot.say("{} does not have a tag set.".format(user.display_name))
             return
-        self.async_refresh(user_url+'/refresh')
+        await self.async_refresh(user_url+'/refresh')
         things = CRPlayer(tags[user.id])
         player_data  = []
         player_data.append('[{}]({})'.format(tags[user.id], user_url))
