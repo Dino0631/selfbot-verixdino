@@ -109,22 +109,37 @@ class Stuff():
                 args[i] = int(a)-1
         totalgold = {'c':0,'r':0,'e':0,'l':0,}
         allgold = 0
-        cardlvl = {}
-        if 'c' in args and 'r' in args:
-            cardlvl['c'] = args[args.index('c')+1:args.index('r')]
-        elif 'c' in args:
-            cardlvl['c'] = args[args.index('c')+1:]
-        if 'r' in args and 'e' in args:
-            cardlvl['r'] = args[args.index('r')+1:args.index('e')]
-        elif 'r' in args:
-            cardlvl['r'] = args[args.index('r')+1:]
-        if 'e' in args and 'l' in args:
-            cardlvl['e'] = args[args.index('e')+1:args.index('l')]
-        elif 'e' in args:
-            cardlvl['e'] = args[args.index('e')+1:]
-        if 'l' in args:
-            cardlvl['l'] = args[args.index('l')+1:]
-        print(cardlvl)
+        cardlvl = {
+            'c':[],
+            'r':[],
+            'e':[],
+            'l':[]
+        }
+        currentrarity = 'c'
+        for x in args:
+            if str(x).isalpha():
+                if x in ['c', 'r', 'e', 'l']:
+                    currentrarity = x
+                else:
+                    await self.bot.say("Invalid rarity")
+                    return
+            elif str(x).isdigit():
+                cardlvl[currentrarity].append(x)
+        # if 'c' in args and 'r' in args:
+        #     cardlvl['c'] = args[args.index('c')+1:args.index('r')]
+        # elif 'c' in args and 'r':
+        #     cardlvl['c'] = args[args.index('c')+1:]
+        # if 'r' in args and 'e' in args:
+        #     cardlvl['r'] = args[args.index('r')+1:args.index('e')]
+        # elif 'r' in args:
+        #     cardlvl['r'] = args[args.index('r')+1:]
+        # if 'e' in args and 'l' in args:
+        #     cardlvl['e'] = args[args.index('e')+1:args.index('l')]
+        # elif 'e' in args:
+        #     cardlvl['e'] = args[args.index('e')+1:]
+        # if 'l' in args:
+        #     cardlvl['l'] = args[args.index('l')+1:]
+        # print(cardlvl)
         try:
             for rarity in cardlvl:
                 for lvl in cardlvl[rarity]:
