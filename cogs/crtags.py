@@ -181,7 +181,7 @@ class CRPlayer:
         self.clan = playerClan
 
 
-class Player:
+class CRTags:
 
     def __init__(self, bot):
         self.settings = dataIO.load_json(SETTINGS_JSON)
@@ -895,4 +895,4 @@ def check_file():
 def setup(bot):
     check_folder()
     check_file()
-    bot.add_cog(Player(bot))
+    bot.add_cog(CRTags(bot))

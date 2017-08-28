@@ -7,6 +7,7 @@ import asyncio
 import json
 import requests
 import os
+import aiohttp
 
 class Misc():
 
@@ -19,7 +20,6 @@ class Misc():
                      'Ask again later', 'Better not tell you now', 'Cannot predict now', 'Concentrate and ask again',
                      'Don\'t count on it', 'My reply is no', 'My sources say no', 'Outlook not so good',
                      'Very doubtful']
-        self.selfroles = ['Subscriber','Hype']
 
     async def send_cmd_help(self,ctx):
         if ctx.invoked_subcommand:
@@ -31,7 +31,7 @@ class Misc():
             for page in pages:
                 await self.bot.send_message(ctx.message.channel, page)
 
-    @commands.command(aliases=['es', 'emsay'],pass_context=True)
+    @commands.command(aliases=['es'],pass_context=True)
     async def embedsay(self,ctx, *, message: str = None):
         '''Embed something as the bot.'''
         # color = ("#%06x" % random.randint(8, 0xFFFFFF))
@@ -46,17 +46,6 @@ class Misc():
             await self.bot.say('Usage: `.embedsay [message]`')
 
 
-    @commands.command(pass_context=True)
-    async def say(self,*, message: str):
-        '''Say something as the bot.'''
-        await self.bot.delete_message(ctx.message)
-        if '@everyone' in message:
-            await self.bot.say('Not so fast cheeky boi xdd')
-        elif '@here' in message:
-            await self.bot.say('Ayy lmao, it doesnt work.')
-        else:       
-            await self.bot.say(message)
-
             
     @commands.command()
     async def add(self,*args):
@@ -69,6 +58,31 @@ class Misc():
         except:
             await self.bot.say('Enter numbers only.')
             
+    @commands.command(pass_context=True, aliases=['color'])
+    async def colour(self, ctx, color : str):
+        """Show a colour"""
+        if len(color) == 7 and color.startswith("#"):
+            hsh = 0
+            red = color[hsh+1:hsh+3]
+            green = color[hsh+3:hsh+5]
+            blue = color[hsh+5:hsh+7]
+        elif len(color) == 6:
+            hsh = 0
+            red = color[hsh:hsh+2]
+            green = color[hsh+2:hsh+4]
+            blue = color[hsh+4:hsh+6]
+
+        try:
+            col = (int(red,16),int(green,16),int(blue,16),255)
+        except:
+            return
+
+        im = Image.new("RGBA", (200,200), col)
+        im.save("color{}.png".format(ctx.message.author.id))
+        im = open("color{}.png".format(ctx.message.author.id),"rb")
+        await self.bot.send_file(ctx.message.channel,im,filename="colour.png",content="Showing color {}".format(color))
+        im.close()
+        os.remove("color{}.png".format(ctx.message.author.id))
 
 
 #--------------------------------------------------------------------------------------
@@ -212,7 +226,51 @@ class Misc():
         return await self.bot.delete_message(ctx.message)
 
 
+    @commands.command()
+    async def urban(self, *, search_terms : str):
+        '''Searches Up a Term in Urban Dictionary'''
+        search_terms = search_terms.split(" ")
+        global definition_number
+        definition_number=0
+        try:
+            definition_number = int(search_terms[-1]) - 1
+            search_terms.remove(search_terms[-1])
+        except ValueError:
+            definition_number = 0
+        if definition_number not in range(0, 11):
+            pos = 0
+        search_terms = "+".join(search_terms)
+        url = "http://api.urbandictionary.com/v0/define?term=" + search_terms
+        async with aiohttp.get(url) as r:
+            result = await r.json()
+        if result["list"]:
+            definition = result['list'][definition_number]['definition']
+            example = result['list'][definition_number]['example']
+            defs = len(result['list'])
+            global terms
+            search_terms = search_terms.split("+")
+            terms=""
+            for i in search_terms:
+                terms += i
+                terms += " "
+            msg = ("{}\n\n**Example:\n**{}".format(definition, example))
+            title = (terms + "  ({}/{})".format(definition_number+1, defs))
+            emb = discord.Embed(color = discord.Color.blue(), title = title, description=msg)
+            await self.bot.say(embed=emb)
+        else:
+            await self.bot.say("Your search terms gave no results.")
     
-    
+
+    @commands.command(pass_context=True)
+    async def love(self, ctx, *, person : str):
+        '''Loves a person'''
+        spinner = ["|","/","-","\\","|","/","-","\\","|"]
+        for count in range(9):
+            await self.bot.edit_message(ctx.message, "`Calculating Love {}`".format(spinner[count]))
+            await asyncio.sleep(0.2)
+        await self.bot.say("", embed=discord.Embed(color=discord.Color.red(), title="Your love...", description="You love {} a whopping {}%!".format(person, random.randint(0, 100))))
+        await self.bot.delete_message(ctx.message)
+
+
 def setup(bot):
     bot.add_cog(Misc(bot))

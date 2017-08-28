@@ -226,197 +226,197 @@ class Pages:
 
             await self.match()
 
-class Info():
+class Info2():
 
 
     def __init__(self, bot):
         self.bot = bot
          
-
-
-    @commands.command(pass_context=True,aliases=['s','serverinfo','si'])
-    async def server(self, ctx):
-        '''See information about the server.'''
-        server = ctx.message.server
-        online = len([m.status for m in server.members
-                      if m.status == discord.Status.online or
-                      m.status == discord.Status.idle or
-                      m.status == discord.Status.dnd])
-        total_users = len(server.members)
-        text_channels = len([x for x in server.channels
-                             if x.type == discord.ChannelType.text])
-        voice_channels = len(server.channels) - text_channels
-        passed = (ctx.message.timestamp - server.created_at).days
-        created_at = ("Since {}. That's over {} days ago!"
-                      "".format(server.created_at.strftime("%d %b %Y %H:%M"),
-                                passed))
-        colour = ("#%06x" % random.randint(0, 0xFFFFFF))
-        colour = int(colour[1:], 16)
-
-        data = discord.Embed(
-            description=created_at,
-            colour=discord.Colour(value=colour))
-        data.add_field(name="Region", value=str(server.region))
-        data.add_field(name="Users", value="{}/{}".format(online, total_users))
-        data.add_field(name="Text Channels", value=text_channels)
-        data.add_field(name="Voice Channels", value=voice_channels)
-        data.add_field(name="Roles", value=len(server.roles))
-        data.add_field(name="Owner", value=str(server.owner))
-        data.set_footer(text="Server ID: " + server.id)
-
-        if server.icon_url:
-            data.set_author(name=server.name, icon_url=server.icon_url)
-            data.set_thumbnail(url=server.icon_url)
-        else:
-            data.set_author(name=server.name)
-            print(data.to_dict())
-
-        try:
-            await self.bot.say(embed=data)
-            print('test')
-            
-        except discord.HTTPException:
-            await self.bot.say("I need the `Embed links` permission "
-                               "to send this")
-
-    @commands.command(pass_context=True,no_pm=True,aliases=["ri","role"])
-    async def roleinfo(self, ctx, *, role: discord.Role=None):
-        '''Shows information about a role'''
-        server = ctx.message.server
-
-        if not role:
-            role = server.default_role
-
-        since_created = (ctx.message.timestamp - role.created_at).days
-        role_created = role.created_at.strftime("%d %b %Y %H:%M")
-        created_on = "{}\n({} days ago!)".format(role_created, since_created)
-
-        users = len([x for x in server.members if role in x.roles])
-        if str(role.colour) == "#000000":
-            colour = "default"
-            color = ("#%06x" % random.randint(0, 0xFFFFFF))
-            color = int(colour[1:], 16)
-        else:
-            colour = "Hex: {}\nRGB: {}".format(str(role.colour).upper(),str(role.colour.to_tuple()))
-            color = role.colour
-
-        em = discord.Embed(colour=color)
-        em.set_author(name=role.name)
-        em.add_field(name="ID", value=role.id, inline=True)
-        em.add_field(name="Users", value=users, inline=True)
-        em.add_field(name="Mentionable", value=role.mentionable, inline=True)
-        em.add_field(name="Hoist", value=role.hoist, inline=True)
-        em.add_field(name="Position", value=role.position, inline=True)
-        em.add_field(name="Managed", value=role.managed, inline=True)
-        em.add_field(name="Colour", value=colour, inline=False)
-        em.set_footer(text=created_on)
-
-        try:
-            await self.bot.say(embed=em)
-        except discord.HTTPException:
-            await self.bot.say("I need the `Embed links` permission "
-                               "to send this")
-        
-    @commands.command(pass_context=True,aliases=['ui','user'],description='See user-info of someone.')
-    async def userinfo(self,ctx, user: discord.Member = None):
-        '''See information about a user or yourself.'''
-        server = ctx.message.server
-        if user:
-            pass
-        else:
-            user = ctx.message.author
-        avi = user.avatar_url
-        if avi:
-            pass
-        else:
-            avi = user.default_avatar_url
-        roles = sorted([x.name for x in user.roles if x.name != "@everyone"])
-        if roles:
-            roles = ', '.join(roles)
-        else:
-            roles = 'None'
-        time = ctx.message.timestamp
-        desc = '{0} is chilling in {1} mode.'.format(user.name,user.status)
-        member_number = sorted(server.members,key=lambda m: m.joined_at).index(user) + 1
-        em = discord.Embed(colour=0x00fffff,description = desc,timestamp=time)
-        em.add_field(name='Nick', value=user.nick, inline=True)
-        em.add_field(name='Member No.',value=str(member_number),inline = True)
-        em.add_field(name='Account Created', value=user.created_at.__format__('%A, %d. %B %Y'))
-        em.add_field(name='Join Date', value=user.joined_at.__format__('%A, %d. %B %Y'))
-        em.add_field(name='Roles', value=roles, inline=True)
-        em.set_footer(text='User ID: '+str(user.id))
-        em.set_thumbnail(url=avi)
-        em.set_author(name=user, icon_url='http://site-449644.mozfiles.com/files/449644/logo-1.png')
-        await self.bot.send_message(ctx.message.channel, embed=em)
-
-    @commands.command(pass_context=True,aliases=['av','dp'])
-    async def avatar(self,ctx, user: discord.Member = None):
-        '''Returns ones avatar URL'''
-        if user:
-            pass
-        else:
-            user = ctx.message.author
-        avi = user.avatar_url
-        if avi:
-            pass
-        else:
-            avi = user.default_avatar_url
-        colour = ("#%06x" % random.randint(0, 0xFFFFFF))
-        colour = int(colour[1:], 16)
-
-        if user.nick is None:
-            name = user.name
-        else:
-            name = user.nick
-        em = discord.Embed(title=name, url=avi, color=colour)
-        em.set_image(url=avi)
-        await self.bot.say(embed=em)
-
-
     @commands.command(pass_context=True)
-    async def info(self, ctx):
-        """See bot information, uptime, servers etc."""
-        uptime = (datetime.datetime.now() - self.bot.uptime)
-        hours, rem = divmod(int(uptime.total_seconds()), 3600)
-        minutes, seconds = divmod(rem, 60)
-        days, hours = divmod(hours, 24)
-        if days:
-            time_ = '%s days, %s hours, %s minutes, and %s seconds' % (days, hours, minutes, seconds)
-        else:
-            time_ = '%s hours, %s minutes, and %s seconds' % (hours, minutes, seconds)
-        servers = len(self.bot.servers)
-        version = '0.1.1'
-        library = 'discord.py'
-        creator = 'verix#7220'
-        discord_ = '[Support Server](https://discord.gg/wkPy3sb)'
-        github = '[/verixx/selfbot](https://github.com/verixx/selfbot)'
-        time = ctx.message.timestamp
-        emb = discord.Embed(colour=0x00FFFF)
-        emb.set_author(name='selfbot-verix', icon_url=self.bot.user.avatar_url)
-        emb.add_field(name='Version',value=version)
-        emb.add_field(name='Library',value=library)
-        emb.add_field(name='Creator',value=creator)
-        emb.add_field(name='Servers',value=servers)
-        emb.add_field(name='Github',value=github)
-        emb.add_field(name='Discord',value=discord_)
-        emb.add_field(name='Uptime',value=time_)
-        emb.set_footer(text="ID: {}".format(self.bot.user.id))
-        emb.set_thumbnail(url='https://cdn.discordapp.com/avatars/319395783847837696/349677f658e864c0a5247a658df61eb1.webp?width=80&height=80')
-        await self.bot.say(embed=emb)
-
-
-
-    @commands.command(pass_context=True)
-    async def help(self, ctx, *, cmd = None):
-        """Shows this message."""
+    async def help2(self, ctx, cog = None):
+        """Shows listed help message."""
         author = ctx.message.author
         await self.bot.delete_message(ctx.message)
-        pages = self.bot.formatter.format_help_for(ctx, self.bot)
+        n = 0
+        if cog == None:
+            pages = self.bot.formatter.format_help_for(ctx, self.bot, 3)
+            for page in pages:
+                try:
+                    if(n!=0):
+                        page.set_author(name='', url='')
+                    if(n!=len(pages)-1):
+                        page.set_footer(text='')
+                    await self.bot.say(embed=page)
+                    n += 1
+                except:
+                    await self.bot.say('I need the embed links perm.')
+        else:
+            pages = self.bot.formatter.format_help_for(ctx, self.bot, 1)
+            cog = cog.lower()
+            maxfuzrat = 0
+            bestmatch = pages[0]
+            currentfuzrat = 0
+            for page in pages:
+                pagecog = page.to_dict()['fields'][0]['name'] # cog name of page
+                pagecog = pagecog[:-1].lower() #remove the colon and make it lowercase
+                if '\u200b' in pagecog:
+                    pagecog.replace('\u200b', '')
+                currentfuzrat = fuzz.ratio(cog, pagecog)
+                if  currentfuzrat > maxfuzrat:
+                    # print("page cog: {}\nsearch cog: {}\nfuzz ratio: {}".format(pagecog, cog, currentfuzrat))
+                    maxfuzrat = currentfuzrat
+                    bestmatch = page
+            await self.bot.say(embed=bestmatch)
+
+
+    @commands.command(pass_context=True)
+    async def help3(self, ctx, *, cmd = None):
+        """Shows paginated help message."""
+        await self.bot.delete_message(ctx.message)
+        author = ctx.message.author
+        pages = self.bot.formatter.format_help_for(ctx, self.bot, 1)
+        testing = self.bot.get_channel('344184736324780032')
+        pages2 = []
+        n = 0
         for page in pages:
             try:
-                await self.bot.say(embed=page)
+            # if(n!=0):
+                # page.set_author(name='', url='')
+            # if(n!=len(pages)-1):
+                # page.set_footer(text='')
+            # await self.bot.send_message(testing, embed=page)
+            # await asyncio.sleep(.1)
+            # messages = []
+            # async for m in self.bot.logs_from(testing, limit=2):
+            #     messages.append(m)
+            # message = messages[0]
+                message = page.to_dict()
+                pages2.append(message)
             except:
                 await self.bot.say('I need the embed links perm.')
+        line = []
+        for page2 in pages2:
+            em = page2
+
+            # print('hi3')
+            for x in em['fields']:
+                line.append('**'+x['name']+'**') #append the cog heading
+                # print('hi3.1')
+                val = x['value']
+                # print('hi3.2')
+                val = val.split('\n')
+                # print('hi3.3')
+                line.extend(val)
+            # print('hi3.4')
+
+        p = Pages(self.bot, message=ctx.message, entries=line)
+        p.embed.set_author(name='Help - Verix-Dino Selfbot Commands', icon_url=self.bot.user.avatar_url)
+        p.embed.color = 0x00FFFF
+        await p.paginate()
+
+
+
+    @commands.command(pass_context=True)
+    async def react(self, ctx, *args):
+        """Add reactions to a message by message id.
+        
+        Add reactions to a specific message id
+        [p]react 123456 :uwot: :lolno: :smile: 
+        
+        Add reactions to the last message in channel
+        [p]react :uwot: :lolno: :smile:
+        """
+        server = ctx.message.server
+        channel = ctx.message.channel
+
+        if not len(args):
+            await send_cmd_help(ctx)
+            return
+
+        has_message_id = args[0].isdigit()
+
+        emojis = args[1:] if has_message_id else args
+        message_id = args[0] if has_message_id else None
+        if has_message_id:
+            try:
+                message = await self.bot.get_message(channel, message_id)
+            except discord.NotFound:
+                await self.bot.say("Cannot find message with that id.")
+                return
+        else:
+            # use the 2nd last message because the last message would be the command
+            messages = []
+            async for m in self.bot.logs_from(channel, limit=2):
+                messages.append(m)
+            message = messages[1]
+
+        useremojis = list(emojis)
+        new_emojis = []
+        if(server == None):
+            new_emojis.extend(useremojis)
+        else:
+            for e in useremojis:
+                lastlist = new_emojis
+                for x in server.emojis:
+                    ename = e[e.find(':') + 1 : e.rfind(':')]
+                    if(x.name == ename):
+                        new_emojis.append(x)
+                if(lastlist == new_emojis):
+                    new_emojis.append(e)
+
+        for emoji in new_emojis:
+            try:
+                await self.bot.add_reaction(message, emoji)
+            except discord.HTTPException:
+                # reaction add failed
+                pass
+            except discord.Forbidden:
+                await self.bot.say(
+                    "I don’t have permission to react to that message.")
+                break
+            except discord.InvalidArgument:
+                await self.bot.say("Invalid arguments for emojis")
+                break
+
+        await self.bot.delete_message(ctx.message)
+
+    @commands.command(pass_context=True)
+    async def next(self, ctx):
+        '''go to next page in s.help'''
+        await ctx.invoke(self.react, '▶')
+
+    @commands.command(pass_context=True)
+    async def back(self, ctx):
+        '''go back a page in s.help'''
+        await ctx.invoke(self.react, '◀')
+        
+    @commands.command(pass_context=True)
+    async def i(self, ctx):
+        '''go to info page in s.help'''
+        await ctx.invoke(self.react, 'ℹ')
+        
+    @commands.command(pass_context=True)
+    async def first(self, ctx):
+        '''go to first page in s.help'''
+        await ctx.invoke(self.react, '⏪')
+        
+    @commands.command(pass_context=True)
+    async def last(self, ctx):
+        '''go to last page in s.help'''
+        await ctx.invoke(self.react, '⏩')
+        
+    @commands.command(pass_context=True)
+    async def page(self, ctx):
+        '''go to prev page in s.help'''
+        await ctx.invoke(self.react, '🔢')
+        
+    @commands.command(pass_context=True)
+    async def stop(self, ctx):
+        '''stop the interactive help command'''
+        await ctx.invoke(self.react, '⏹')
+
+
+
 
 def setup(bot):
-    bot.add_cog(Info(bot))
+    bot.add_cog(Info2(bot))

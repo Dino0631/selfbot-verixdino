@@ -13,6 +13,30 @@ from __main__ import send_cmd_help
 import string
 import aiohttp
 from urllib.parse import quote_plus
+import locale
+
+
+class InvalidRarity(Exception):
+    pass
+numcards = {}
+numcards['c'] = 20
+numcards['r'] = 21
+numcards['e'] = 22
+numcards['l'] = 13
+maxcards = {
+    'c':13,
+    'r':11,
+    'e':8,
+    'l':5
+}
+tourneycards = {
+    'c':9,
+    'r':7,
+    'e':4,
+    'l':1
+}
+
+
 upgrades = {}
 upgrades['c'] = [
     5,
@@ -98,15 +122,34 @@ class Stuff():
     # @commands.command()
     # async def lmao(self):
     #     await self.bot.say('dont do tis')
+    def goldcalc(self, cardlvl):
+        allgold = 0
+        for rarity in cardlvl:
+            for lvl in cardlvl[rarity]:
+                allgold += totalupgrades[rarity][lvl]
+                # totalgold[rarity] += totalupgrades[rarity][lvl]
+        return allgold
 
+    def lvlsdict(self, args):
+        currentrarity = 'c'
+        cardlvl = {
+            'c':[],
+            'r':[],
+            'e':[],
+            'l':[]
+        }
+        for x in args:
+            if str(x).isalpha():
+                if x in ['c', 'r', 'e', 'l']:
+                    currentrarity = x
+                else:
+                    ex = InvalidRarity()
+                    raise ex
+            elif str(x).isdigit():
+                cardlvl[currentrarity].append(x)
+        return cardlvl
     @commands.command(pass_context=True)
     async def gold(self, ctx, *, args):
-        args = args.strip().split(' ')
-        while '' in args:
-            args.remove('')
-        for i, a in enumerate(args):
-            if a.isdigit():
-                args[i] = int(a)-1
         totalgold = {'c':0,'r':0,'e':0,'l':0,}
         allgold = 0
         cardlvl = {
@@ -115,47 +158,164 @@ class Stuff():
             'e':[],
             'l':[]
         }
-        currentrarity = 'c'
-        for x in args:
-            if str(x).isalpha():
-                if x in ['c', 'r', 'e', 'l']:
-                    currentrarity = x
-                else:
-                    await self.bot.say("Invalid rarity")
-                    return
-            elif str(x).isdigit():
-                cardlvl[currentrarity].append(x)
-        # if 'c' in args and 'r' in args:
-        #     cardlvl['c'] = args[args.index('c')+1:args.index('r')]
-        # elif 'c' in args and 'r':
-        #     cardlvl['c'] = args[args.index('c')+1:]
-        # if 'r' in args and 'e' in args:
-        #     cardlvl['r'] = args[args.index('r')+1:args.index('e')]
-        # elif 'r' in args:
-        #     cardlvl['r'] = args[args.index('r')+1:]
-        # if 'e' in args and 'l' in args:
-        #     cardlvl['e'] = args[args.index('e')+1:args.index('l')]
-        # elif 'e' in args:
-        #     cardlvl['e'] = args[args.index('e')+1:]
-        # if 'l' in args:
-        #     cardlvl['l'] = args[args.index('l')+1:]
-        # print(cardlvl)
-        try:
-            for rarity in cardlvl:
-                for lvl in cardlvl[rarity]:
-                    allgold += totalupgrades[rarity][lvl]
-                    totalgold[rarity] += totalupgrades[rarity][lvl]
-        except IndexError:
-            await self.bot.say("Invalid card level")
-        await self.bot.say("You have spent a total of {} gold on upgrading those cards".format(allgold))
+        msg = "It would cost a total of"
+        msg2 = "gold to upgrade those cards"
+        args = args.strip().split(' ')
+        if 'max' in args:
+            msg2 = "gold to upgrade all cards to max"
+            args = []
+            n = 0
+            for rarity in numcards:
+                args.append(rarity)
+                while n < numcards[rarity]:
+                    args.append(str(maxcards[rarity]))
+                    n += 1
+                n = 0
+        if 'tourney' in args:
+            msg2 = "gold to upgrade all cards to tourney standard"
+            args = []
+            n = 0
+            for rarity in numcards:
+                args.append(rarity)
+                while n < numcards[rarity]:
+                    args.append(str(tourneycards[rarity]))
+                    n += 1
+                n = 0
+        if args.count('-') >1:
+            await self.bot.say("too many minuses, limit is 1")
+            return
+        elif args.count('-') == 1:
+            cardlvl = []
+            allgold = []
+            args = ' '.join(args).split('-')
+            for index, arg in enumerate(args):
+                args[index] = arg.strip().split(' ')
+            for arg in args:
+                while '' in arg:
+                    arg.remove('')
+
+                for i, a in enumerate(arg):
+                    if a.isdigit():
+                        arg[i] = int(a)-1
+            for arg in args:
+                try:
+                    cardlvl.append(self.lvlsdict(arg))
+                except InvalidRarity:
+                    await self.bot.say("Invalid Rarity")
+            for c in cardlvl:
+                try:
+                    allgold.append(self.goldcalc(c))
+                except IndexError:
+                    await self.bot.say("Invalid card level")
+            formattedgold = locale.format("%d", allgold[0]-allgold[1], grouping=True)
+        else:
+            while '' in args:
+                args.remove('')
+
+            for i, a in enumerate(args):
+                if a.isdigit():
+                    args[i] = int(a)-1
+            currentrarity = 'c'
+            try:
+                cardlvl = self.lvlsdict(args)
+            except InvalidRarity:
+                await self.bot.say("Invalid Rarity")
+            print(cardlvl)
+            try:
+                allgold = self.goldcalc(cardlvl)
+            except IndexError:
+                await self.bot.say("Invalid card level")
+            print(allgold)
+            locale.setlocale(locale.LC_ALL, 'US')
+            formattedgold = locale.format("%d", allgold, grouping=True)
+        await self.bot.say("{} {} {}".format(msg, formattedgold, msg2))
         # for rarity in totalgold:
         #     await self.bot.say("You have spent a total of {} gold on upgrading {} cards".format(totalgold[rarity], rarity))
+
+
+    @commands.command(pass_context=True)
+    async def urban2(self,ctx, *, search_terms : str, definition_number : int=1):
+        """Urban Dictionary search
+
+        Definition number must be between 1 and 10"""
+        await self.bot.edit_message(ctx.message, new_content=search_terms + ':')
+        def encode(s):
+            return quote_plus(s, encoding='utf-8', errors='replace')
+
+        # definition_number is just there to show up in the help
+        # all this mess is to avoid forcing double quotes on the user
+
+        search_terms = search_terms.split(" ")
+        try:
+            if len(search_terms) > 1:
+                pos = int(search_terms[-1]) - 1
+                search_terms = search_terms[:-1]
+            else:
+                pos = 0
+            if pos not in range(0, 11): # API only provides the
+                pos = 0                 # top 10 definitions
+        except ValueError:
+            pos = 0
+
+        search_terms = "+".join([encode(s) for s in search_terms])
+        url = "http://api.urbandictionary.com/v0/define?term=" + search_terms
+        try:
+            async with aiohttp.get(url) as r:
+                result = await r.json()
+            if result["list"]:
+                definition = result['list'][pos]['definition']
+                example = result['list'][pos]['example']
+                defs = len(result['list'])
+                msg = ("**Definition #{} out of {}:**\n{}\n\n"
+                       "**Example:**\n{}".format(pos+1, defs, definition,
+                                                 example))
+                msg = pagify(msg, ["\n"])
+                pages = []
+                for page in msg:
+                    x = page.split('\n')
+                    pages.extend(x)
+                em = discord.Embed(color=discord.Color.blue())
+                # em = discord.Embed(color=discord.Color(0xE86222))
+                em.set_author(name="Urban Dictionary", icon_url='http://i.imgur.com/6nJnuM4.png', url='http://www.urbandictionary.com/')
+                n = 0
+                prevn = n
+                lastfieldname = ''
+                lastfieldval = ''
+                for x in pages:
+                    if x.startswith('**'):
+                        lastfieldname = x.replace('**','')
+                        em.add_field(name=lastfieldname, value='lol')
+                        n += 1
+                    else:
+                        if n == prevn:
+                            lastfieldval += x
+                            lastfieldval +='\n'
+                        else:
+                            prevn = n
+                            lastfieldval = x
+                        # print("hi")
+                        # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
+                        em.set_field_at(n-1, name=lastfieldname, value=lastfieldval)
+                        # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
+                        # print("hi2")
+                await self.bot.say(embed=em)
+            else:
+                await self.bot.say("Your search terms gave no results.")
+        except IndexError:
+            await self.bot.say("There is no definition #{}".format(pos+1))
+        except:
+            await self.bot.say("Error.")
+        # await self.bot.send_message(ctx.message.channel, url)
+    # @bot.command(pass_context=True)
+    # async def restart():
+    #     await self.bot.logout()
+    #     await self.bot.login()  
 
     @commands.command(pass_context=True)
     async def test(self, ctx):
         em =  discord.Embed()
         em.set_image(url='')
-        await self.bot.say(embed=em)
+        print(dir(self.bot))
 
     @commands.command(pass_context=True)
     async def sml(self, ctx):
@@ -166,6 +326,22 @@ class Stuff():
             ":angry: :rage: :rage: :rage: :angry:\n"+
             ":rage: :angry: :rage: :angry: :rage:\n"+
             ":angry: :rage: :angry: :rage: :angry:")
+
+    @commands.command(pass_context=True)
+    async def zoidface(self, ctx):
+        await self.bot.delete_message(ctx.message)
+        em = discord.Embed()
+        em.set_image(url='http://i.imgur.com/BRdPVMJ.jpg')
+        await self.bot.say(embed=em)
+
+    @commands.command(pass_context=True)
+    async def here1(self, ctx):
+        await self.bot.say('@\u200bhere')
+
+    @commands.command(pass_context=True)
+    async def every1(self, ctx):
+        await self.bot.say('@\u200beveryone')
+
 
     @commands.command(pass_context=True)
     async def smlirl(self, ctx):
