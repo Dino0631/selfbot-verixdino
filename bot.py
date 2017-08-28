@@ -1,11 +1,15 @@
 import discord
+from ext.formatter import EmbedHelp
 from discord.ext import commands
+from contextlib import redirect_stdout
 import datetime
 import json
-from ext.formatter import EmbedHelp
 import inspect
 import os
 import glob
+import io
+import textwrap
+import traceback
 data = {}
 defaultdata = {
 "BOT": {
@@ -80,7 +84,7 @@ _extensions = [
     # 'cogs.clashroyale',
     'cogs.misc',
     'cogs.utility',
-    'cogs.stuffutils',
+    'cogs.utils2',
     'cogs.info',
     'cogs.mod',
     'cogs.stuff',
