@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from urllib import parse
 from urllib.parse import parse_qs, quote_plus
-
+import unicodedata
 from urllib.request import Request, urlopen
 import traceback
 import inspect
@@ -235,7 +235,6 @@ class Utility:
         except:
             await self.bot.say('Message too long.')
 
-
     @commands.group(pass_context=True, aliases=['t'], invoke_without_command=True)      
     async def translate(self, ctx, lang, *, text):
         """Translate text! Do .translate langs to get available languages!"""
@@ -303,9 +302,6 @@ class Utility:
         result = BeautifulSoup(response, "lxml")
         url="**Result:**\nhttps://www.youtube.com{}".format(result.find_all(attrs={'class': 'yt-uix-tile-link'})[0].get('href'))
         await self.bot.say(url)
-
-
-
 
     @commands.command(pass_context=True,description='Do .embed to see how to use it.')
     async def embed(self, ctx, *, msg: str = None):
@@ -653,6 +649,22 @@ class Utility:
 
             await self.bot.say(msg)
 
+    @commands.command(pass_context=True)
+    async def source(self, ctx, *, command):
+        '''See the source code for any command.'''
+        await self.bot.say('```py\n'+str(inspect.getsource(self.bot.get_command(command).callback)+'```'))
+
+    @commands.command()
+    async def coinflip(self):
+        '''Flips a coin'''
+        randnum = random.randint(0,1)
+        if randnum == 0:
+            coin = 'Head'
+        else:
+            coin = 'Tail'
+        emb = discord.Embed(color=discord.Color.gold(), title="You Flipped A...", description = coin)
+        await self.bot.say('', embed = emb)
+        
 def setup(bot):
 	bot.add_cog(Utility(bot))
 

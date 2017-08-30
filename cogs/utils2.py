@@ -17,191 +17,6 @@ from lxml import etree
 from mtranslate import translate
 import random
 
-codes = {'ab': 'Abkhaz',
-    'aa': 'Afar',
-    'af': 'Afrikaans',
-    'ak': 'Akan',
-    'sq': 'Albanian',
-    'am': 'Amharic',
-    'ar': 'Arabic',
-    'an': 'Aragonese',
-    'hy': 'Armenian',
-    'as': 'Assamese',
-    'av': 'Avaric',
-    'ae': 'Avestan',
-    'ay': 'Aymara',
-    'az': 'Azerbaijani',
-    'bm': 'Bambara',
-    'ba': 'Bashkir',
-    'eu': 'Basque',
-    'be': 'Belarusian',
-    'bn': 'Bengali',
-    'bh': 'Bihari',
-    'bi': 'Bislama',
-    'bs': 'Bosnian',
-    'br': 'Breton',
-    'bg': 'Bulgarian',
-    'my': 'Burmese',
-    'ca': 'Catalan',
-    'ch': 'Chamorro',
-    'ce': 'Chechen',
-    'ny': 'Nyanja',
-    'zh': 'Chinese',
-    'cv': 'Chuvash',
-    'kw': 'Cornish',
-    'co': 'Corsican',
-    'cr': 'Cree',
-    'hr': 'Croatian',
-    'cs': 'Czech',
-    'da': 'Danish',
-    'dv': 'Divehi',
-    'nl': 'Dutch',
-    'dz': 'Dzongkha',
-    'en': 'English',
-    'eo': 'Esperanto',
-    'et': 'Estonian',
-    'ee': 'Ewe',
-    'fo': 'Faroese',
-    'fj': 'Fijian',
-    'fi': 'Finnish',
-    'fr': 'French',
-    'ff': 'Fula',
-    'gl': 'Galician',
-    'ka': 'Georgian',
-    'de': 'German',
-    'el': 'Greek',
-    'gn': 'Guarani',
-    'gu': 'Gujarati',
-    'ht': 'Haitian',
-    'ha': 'Hausa',
-    'he': 'Hebrew',
-    'hz': 'Herero',
-    'hi': 'Hindi',
-    'ho': 'Hiri-Motu',
-    'hu': 'Hungarian',
-    'ia': 'Interlingua',
-    'id': 'Indonesian',
-    'ie': 'Interlingue',
-    'ga': 'Irish',
-    'ig': 'Igbo',
-    'ik': 'Inupiaq',
-    'io': 'Ido',
-    'is': 'Icelandic',
-    'it': 'Italian',
-    'iu': 'Inuktitut',
-    'ja': 'Japanese',
-    'jv': 'Javanese',
-    'kl': 'Kalaallisut',
-    'kn': 'Kannada',
-    'kr': 'Kanuri',
-    'ks': 'Kashmiri',
-    'kk': 'Kazakh',
-    'km': 'Khmer',
-    'ki': 'Kikuyu',
-    'rw': 'Kinyarwanda',
-    'ky': 'Kyrgyz',
-    'kv': 'Komi',
-    'kg': 'Kongo',
-    'ko': 'Korean',
-    'ku': 'Kurdish',
-    'kj': 'Kwanyama',
-    'la': 'Latin',
-    'lb': 'Luxembourgish',
-    'lg': 'Luganda',
-    'li': 'Limburgish',
-    'ln': 'Lingala',
-    'lo': 'Lao',
-    'lt': 'Lithuanian',
-    'lu': 'Luba-Katanga',
-    'lv': 'Latvian',
-    'gv': 'Manx',
-    'mk': 'Macedonian',
-    'mg': 'Malagasy',
-    'ms': 'Malay',
-    'ml': 'Malayalam',
-    'mt': 'Maltese',
-    'mi': 'Māori',
-    'mr': 'Marathi',
-    'mh': 'Marshallese',
-    'mn': 'Mongolian',
-    'na': 'Nauru',
-    'nv': 'Navajo',
-    'nb': 'Norwegian Bokmål',
-    'nd': 'North-Ndebele',
-    'ne': 'Nepali',
-    'ng': 'Ndonga',
-    'nn': 'Norwegian-Nynorsk',
-    'no': 'Norwegian',
-    'ii': 'Nuosu',
-    'nr': 'South-Ndebele',
-    'oc': 'Occitan',
-    'oj': 'Ojibwe',
-    'cu': 'Old-Church-Slavonic',
-    'om': 'Oromo',
-    'or': 'Oriya',
-    'os': 'Ossetian',
-    'pa': 'Panjabi',
-    'pi': 'Pāli',
-    'fa': 'Persian',
-    'pl': 'Polish',
-    'ps': 'Pashto',
-    'pt': 'Portuguese',
-    'qu': 'Quechua',
-    'rm': 'Romansh',
-    'rn': 'Kirundi',
-    'ro': 'Romanian',
-    'ru': 'Russian',
-    'sa': 'Sanskrit',
-    'sc': 'Sardinian',
-    'sd': 'Sindhi',
-    'se': 'Northern-Sami',
-    'sm': 'Samoan',
-    'sg': 'Sango',
-    'sr': 'Serbian',
-    'gd': 'Scottish-Gaelic',
-    'sn': 'Shona',
-    'si': 'Sinhala',
-    'sk': 'Slovak',
-    'sl': 'Slovene',
-    'so': 'Somali',
-    'st': 'Southern-Sotho',
-    'es': 'Spanish',
-    'su': 'Sundanese',
-    'sw': 'Swahili',
-    'ss': 'Swati',
-    'sv': 'Swedish',
-    'ta': 'Tamil',
-    'te': 'Telugu',
-    'tg': 'Tajik',
-    'th': 'Thai',
-    'ti': 'Tigrinya',
-    'bo': 'Tibetan',
-    'tk': 'Turkmen',
-    'tl': 'Tagalog',
-    'tn': 'Tswana',
-    'to': 'Tonga',
-    'tr': 'Turkish',
-    'ts': 'Tsonga',
-    'tt': 'Tatar',
-    'tw': 'Twi',
-    'ty': 'Tahitian',
-    'ug': 'Uighur',
-    'uk': 'Ukrainian',
-    'ur': 'Urdu',
-    'uz': 'Uzbek',
-    've': 'Venda',
-    'vi': 'Vietnamese',
-    'vo': 'Volapuk',
-    'wa': 'Walloon',
-    'cy': 'Welsh',
-    'wo': 'Wolof',
-    'fy': 'Western-Frisian',
-    'xh': 'Xhosa',
-    'yi': 'Yiddish',
-    'yo': 'Yoruba',
-    'za': 'Zhuang',
-    'zu': 'Zulu',
-}
 
 class Utility2:
     def __init__(self, bot):
@@ -454,6 +269,15 @@ class Utility2:
         return
 
 
+    @commands.command(pass_context=True)
+    async def copyembed(self, ctx):
+        channel = ctx.message.channel
+        messages = []
+        async for m in self.bot.logs_from(channel, limit=2):
+            messages.append(m)
+        message = messages[1]
+        await self.bot.say('```'+str(message.embeds[0])+'```')
+
 
     @commands.command(pass_context=True)
     async def edit(self, ctx, *msg):
@@ -643,6 +467,79 @@ class Utility2:
                         break
             await self.bot.say(box(page, lang="py"))
 
+
+    @commands.command(pass_context=True)
+    async def urban2(self,ctx, *, search_terms : str, definition_number : int=1):
+        """Urban Dictionary search
+
+        Definition number must be between 1 and 10"""
+        await self.bot.edit_message(ctx.message, new_content=search_terms + ':')
+        def encode(s):
+            return quote_plus(s, encoding='utf-8', errors='replace')
+
+        # definition_number is just there to show up in the help
+        # all this mess is to avoid forcing double quotes on the user
+
+        search_terms = search_terms.split(" ")
+        try:
+            if len(search_terms) > 1:
+                pos = int(search_terms[-1]) - 1
+                search_terms = search_terms[:-1]
+            else:
+                pos = 0
+            if pos not in range(0, 11): # API only provides the
+                pos = 0                 # top 10 definitions
+        except ValueError:
+            pos = 0
+
+        search_terms = "+".join([encode(s) for s in search_terms])
+        url = "http://api.urbandictionary.com/v0/define?term=" + search_terms
+        try:
+            async with aiohttp.get(url) as r:
+                result = await r.json()
+            if result["list"]:
+                definition = result['list'][pos]['definition']
+                example = result['list'][pos]['example']
+                defs = len(result['list'])
+                msg = ("**Definition #{} out of {}:**\n{}\n\n"
+                       "**Example:**\n{}".format(pos+1, defs, definition,
+                                                 example))
+                msg = pagify(msg, ["\n"])
+                pages = []
+                for page in msg:
+                    x = page.split('\n')
+                    pages.extend(x)
+                em = discord.Embed(color=discord.Color.blue())
+                # em = discord.Embed(color=discord.Color(0xE86222))
+                em.set_author(name="Urban Dictionary", icon_url='http://i.imgur.com/6nJnuM4.png', url='http://www.urbandictionary.com/')
+                n = 0
+                prevn = n
+                lastfieldname = ''
+                lastfieldval = ''
+                for x in pages:
+                    if x.startswith('**'):
+                        lastfieldname = x.replace('**','')
+                        em.add_field(name=lastfieldname, value='lol')
+                        n += 1
+                    else:
+                        if n == prevn:
+                            lastfieldval += x
+                            lastfieldval +='\n'
+                        else:
+                            prevn = n
+                            lastfieldval = x
+                        # print("hi")
+                        # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
+                        em.set_field_at(n-1, name=lastfieldname, value=lastfieldval)
+                        # print("name={}\nvalue={}".format(lastfieldname, lastfieldval))
+                        # print("hi2")
+                await self.bot.say(embed=em)
+            else:
+                await self.bot.say("Your search terms gave no results.")
+        except IndexError:
+            await self.bot.say("There is no definition #{}".format(pos+1))
+        except:
+            await self.bot.say("Error.")
 
 def setup(bot):
     bot.add_cog(Utility2(bot))

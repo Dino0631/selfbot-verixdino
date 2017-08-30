@@ -10,6 +10,7 @@ import glob
 import io
 import textwrap
 import traceback
+import asyncio
 data = {}
 defaultdata = {
 "BOT": {
@@ -78,7 +79,6 @@ async def get_pre(bot, message):
 
 bot = commands.Bot(command_prefix=get_pre, self_bot=True, formatter=EmbedHelp())
 bot.remove_command('help')
-
 _extensions = [
 
     # 'cogs.clashroyale',
@@ -94,9 +94,24 @@ _extensions = [
     'cogs.info2'
     ]
 
+@asyncio.coroutine
+def on_message2(message):
+    # print(message.author)
+    if message.author != bot.user:
+        return
+    # print('lol i enterd a msg')
+    racfserver = bot.get_server('218534373169954816') #if you are in racf dont
+    if message.server == racfserver:				# use it on that server
+        return
+    yield from bot.process_commands(message)
+
+
 @bot.event
 async def on_ready():
+    if bot.user.id == '222925389641547776':
+        bot.on_message = on_message2
     bot.uptime = datetime.datetime.now()
+    prefix = await get_pre(bot, ' ')
     x =   [
         '------------------------------------------',
         'Self-Bot Ready',
@@ -105,6 +120,7 @@ async def on_ready():
         '------------------------------------------',
         'Username: {}'.format(bot.user),
         'User ID: {}'.format(bot.user.id),
+        'Prefix: {}'.format(prefix),
         '------------------------------------------'
     ]
     print('\n'.join(x))
@@ -162,6 +178,15 @@ async def send_cmd_help(ctx):
             print(page)
             await bot.send_message(ctx.message.channel, embed=page)
         print('Sent command help')
+
+# @bot.event
+# async def on_message(message):
+#     try:
+#         print("{} from {}\n{}".format(message.author,message.server, message.content))
+#     except:
+#         pass
+
+
 
 @bot.event
 async def on_command_error(error, ctx):
@@ -391,13 +416,6 @@ async def load(ctx, exten=None):
             exc = '{}: {}'.format(type(e).__name__, e)
             await bot.say('Failed to load extension {}\n{}'.format(exten, exc))
 
-@bot.command(pass_context=True)
-async def source(ctx, *, command):
-    await bot.delete_message(ctx.message)
-    await bot.say('```py\n'+str(inspect.getsource(bot.get_command(command).callback)+'```'))
-
-
-
 if __name__ == "__main__":  
     for extension in _extensions:
         try:
@@ -406,9 +424,11 @@ if __name__ == "__main__":
         except Exception as e:
             exc = '{}: {}'.format(type(e).__name__, e)
             print('Failed to load extension {}\n{}'.format(extension, exc))
+            
 try:
     bot.run(TOKEN, bot=False)
 except Exception as e:
     print('\n[ERROR]: \n{}\n'.format(e))
+    input()
 
     

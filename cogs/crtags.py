@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 from __main__ import send_cmd_help
 import requests
 import os
+import time
 import discord
 from discord.ext import commands
 import json
@@ -30,16 +31,68 @@ import urllib.request
 import asyncio
 import aiohttp
 from ext.commands.dataIO import dataIO
+import locale
+
 NUMITEMS = 9
 statscr_url = "http://statsroyale.com/profile/"
+statsurl = 'http://statsroyale.com'
 PATH = os.path.join("data", "crtags")
 SETTINGS_JSON = os.path.join(PATH, "settings.json")
+CLAN_JSON = os.path.join(PATH, "clan.json")
+SET_JSON = os.path.join(PATH, "set.json")
 validChars = ['0', '2', '8', '9', 'C', 'G', 'J', 'L', 'P', 'Q', 'R', 'U', 'V', 'Y']
 tags = {}
 headers = {
     'User-Agent': 'Bot(Rain), (https://github.com/Dino0631/discordbot/tree/master)',
     'From': 'htmldino@gmail.com'  
 }
+class CRClan:
+
+    def __init__(self, tag):
+        self.member_count = 0
+        self.members = []
+        self.clan_tag = tag
+        self.clan_url = statsurl + '/clan/' + tag
+        self.tr_req = '0'
+        self.clan_trophy = ''
+        self.name = ''
+        self.donperweek = ''
+        self.desc = ''
+        self.clan_badge = ''
+        r = requests.get(self.clan_url, headers=headers)
+        html_doc = r.content
+        soup = BeautifulSoup(html_doc, "html.parser")
+        htmlmembers = soup.find_all('div',{'class': 'clan__rowContainer'})
+        for i, m in enumerate(htmlmembers):
+            data = m.find_all('div', {'class': 'clan__row'})
+            rank = data[0].get_text()
+            name = data[1].get_text()
+            tag = data[1].find('a').attrs['href']
+            url = statsurl + tag
+            tag = tag[tag.find('profile/')+len('profile/'):]
+            level = data[2].find('span', {'class':'clan__playerLevel'}).get_text()
+            trophy = data[4].find('div', {'class': 'clan__cup'}).get_text()
+            donations = data[5].get_text()
+            role = data[6].get_text()
+            memberdict = {
+                'name' : name.strip(),
+                'rank' : rank,
+                'tag' : tag,
+                'url' : url,
+                'level' : level,
+                'trophy' : trophy,
+                'donations' : donations,
+                'role' : role
+            }
+            self.members.append(memberdict)
+
+        clanhead = soup.find('div', {'class':'clan__name'})
+        self.clan_badge = statsurl + clanhead.find('img').attrs['src']
+        info = clanhead.find('div', {'class':'clan__clanInfo'})
+        self.name = info.find('div', {'class':'ui__headerMedium clan__clanName'}).get_text().strip()
+        self.desc = info.find('div', {'class':'ui__mediumText'}).get_text().strip()
+
+
 class CRPlayer:
 
 
@@ -73,7 +126,6 @@ class CRPlayer:
         r = requests.get(user_url, headers=headers)
         html_doc = r.content
         soup = BeautifulSoup(html_doc, "html.parser")
-        statsurl = 'http://statsroyale.com'
         html_doc = r.content
         chests_queue = soup.find('div', {'class':'chests__queue'})
         chests = chests_queue.get_text().split()
@@ -179,13 +231,237 @@ class CRPlayer:
         self.name = playerName
         self.level = playerLevel
         self.clan = playerClan
+        self.clan_url = clan_url
 
+
+class InvalidRarity(Exception):
+    pass
+numcards = {}
+numcards['c'] = 20
+numcards['r'] = 21
+numcards['e'] = 22
+numcards['l'] = 13
+maxcards = {
+    'c':13,
+    'r':11,
+    'e':8,
+    'l':5
+}
+tourneycards = {
+    'c':9,
+    'r':7,
+    'e':4,
+    'l':1
+}
+
+
+upgrades = {}
+upgrades['c'] = [
+    5,
+    20,
+    50,
+    150,
+    400,
+    1000,
+    2000,
+    4000,
+    8000,
+    20000,
+    50000,
+    100000
+]
+upgrades['r'] = upgrades['c'][2:]
+upgrades['e'] = upgrades['r'][3:]
+upgrades['e'][upgrades['e'].index(1000)] = 400
+upgrades['l'] = upgrades['e'][3:]
+upgrades['l'][upgrades['l'].index(8000)] = 5000
+for rarity in upgrades:
+    upgrades[rarity].insert(0, 0)
+
+
+# print(upgrades)
+totalupgrades = {}
+for rarity in upgrades:
+    totalupgrades[rarity] = []
+    for index, cost in enumerate(upgrades[rarity]):
+        totalupgrades[rarity].append(sum(upgrades[rarity][:index+1]))
 
 class CRTags:
 
     def __init__(self, bot):
         self.settings = dataIO.load_json(SETTINGS_JSON)
+        self.clansettings = dataIO.load_json(CLAN_JSON)
         self.bot = bot
+
+    @commands.group(pass_context=True)
+    async def clan(self, ctx):
+        """get clan info
+        """
+        if ctx.invoked_subcommand is None:
+            await send_cmd_help(ctx)
+
+    @clan.command(name='get',pass_context=True)
+    async def get_clan(self, ctx, keyortag):
+        user = ctx.message.author
+        keyortag = keyortag.upper()
+        tag = ''
+        valid = True
+        for letter in keyortag:
+            if letter not in validChars:
+                valid = False
+                break
+        if keyortag in self.clansettings:
+            tag = self.clansettings[keyortag]
+        elif valid:
+            tag = keyortag
+        else:
+            await self.bot.say('`{}` is not in the database, nor is an acceptable tag.'.format(keyortag))
+            return
+        clan = CRClan(tag)
+        clan_data = []
+        clan_data.append(clan.desc)
+        clan_data.append("[{}]({})".format(tag, clan.clan_url))
+        for member in clan.members:
+            clan_data.append(member['name'])
+
+        em = discord.Embed(title=clan.name, description='\n'.join(clan_data),color = discord.Color(0x50d2fe))
+        try:
+            discordname = user.name if user.nick is None else user.nick
+        except:
+            discordname = user.name
+        em.set_author(icon_url=user.avatar_url,name=discordname)
+        # em.set_thumbnail(url=things.clan_badge)
+        em.set_footer(text='Data provided by StatsRoyale', icon_url='http://i.imgur.com/17R3DVU.png')
+        await self.bot.say(embed=em)
+
+    @clan.command(name='set', pass_context=True)
+    async def clansettag(self, ctx, tag, *, key):
+        author = ctx.message.author
+        key = key.upper()
+        tag = tag.upper()
+        valid = True
+        for letter in tag:
+            if letter not in validChars:
+                valid = False
+        if valid: #self.is_valid(tag):
+            self.clansettings[key] = str(tag)
+            dataIO.save_json(CLAN_JSON, self.clansettings)
+            await self.bot.say("Saved {} for {}".format(tag, key))
+        else:
+            await self.bot.say("Invalid tag {}, it must only have the following characters {}".format(author.mention), validChars)
+
+
+    def goldcalc(self, cardlvl):
+        allgold = 0
+        for rarity in cardlvl:
+            for lvl in cardlvl[rarity]:
+                allgold += totalupgrades[rarity][lvl]
+                # totalgold[rarity] += totalupgrades[rarity][lvl]
+        return allgold
+
+    def lvlsdict(self, args):
+        currentrarity = 'c'
+        cardlvl = {
+            'c':[],
+            'r':[],
+            'e':[],
+            'l':[]
+        }
+        for x in args:
+            if str(x).isalpha():
+                if x in ['c', 'r', 'e', 'l']:
+                    currentrarity = x
+                else:
+                    ex = InvalidRarity()
+                    raise ex
+            elif str(x).isdigit():
+                cardlvl[currentrarity].append(x)
+        return cardlvl
+    @commands.command(pass_context=True)
+    async def gold(self, ctx, *, args):
+        totalgold = {'c':0,'r':0,'e':0,'l':0,}
+        allgold = 0
+        cardlvl = {
+            'c':[],
+            'r':[],
+            'e':[],
+            'l':[]
+        }
+        msg = "It would cost a total of"
+        msg2 = "gold to upgrade those cards"
+        args = args.strip().split(' ')
+        if 'max' in args:
+            msg2 = "gold to upgrade all cards to max"
+            args = []
+            n = 0
+            for rarity in numcards:
+                args.append(rarity)
+                while n < numcards[rarity]:
+                    args.append(str(maxcards[rarity]))
+                    n += 1
+                n = 0
+        if 'tourney' in args:
+            msg2 = "gold to upgrade all cards to tourney standard"
+            args = []
+            n = 0
+            for rarity in numcards:
+                args.append(rarity)
+                while n < numcards[rarity]:
+                    args.append(str(tourneycards[rarity]))
+                    n += 1
+                n = 0
+        if args.count('-') >1:
+            await self.bot.say("too many minuses, limit is 1")
+            return
+        elif args.count('-') == 1:
+            cardlvl = []
+            allgold = []
+            args = ' '.join(args).split('-')
+            for index, arg in enumerate(args):
+                args[index] = arg.strip().split(' ')
+            for arg in args:
+                while '' in arg:
+                    arg.remove('')
+
+                for i, a in enumerate(arg):
+                    if a.isdigit():
+                        arg[i] = int(a)-1
+            for arg in args:
+                try:
+                    cardlvl.append(self.lvlsdict(arg))
+                except InvalidRarity:
+                    await self.bot.say("Invalid Rarity")
+            for c in cardlvl:
+                try:
+                    allgold.append(self.goldcalc(c))
+                except IndexError:
+                    await self.bot.say("Invalid card level")
+            formattedgold = locale.format("%d", allgold[0]-allgold[1], grouping=True)
+        else:
+            while '' in args:
+                args.remove('')
+
+            for i, a in enumerate(args):
+                if a.isdigit():
+                    args[i] = int(a)-1
+            currentrarity = 'c'
+            try:
+                cardlvl = self.lvlsdict(args)
+            except InvalidRarity:
+                await self.bot.say("Invalid Rarity")
+                return
+            print(cardlvl)
+            try:
+                allgold = self.goldcalc(cardlvl)
+            except IndexError:
+                await self.bot.say("Invalid card level")
+            print(allgold)
+            locale.setlocale(locale.LC_ALL, 'US')
+            formattedgold = locale.format("%d", allgold, grouping=True)
+        await self.bot.say("{} {} {}".format(msg, formattedgold, msg2))
+        # for rarity in totalgold:
+        #     await self.bot.say("You have spent a total of {} gold on upgrading {} cards".format(totalgold[rarity], rarity))
+
 
     def statsvalid(self, tag):
         for letter in tag:
@@ -207,28 +483,7 @@ class CRTags:
         if user == None:
             user=ctx.message.author
         await self.bot.say("ID: {}".format(user.id))
-    # async def update(self,  tag):
-    #     """make sure player profile is up to date within the last 8hrs"""
-    #     url = statscr_url + tag
-    #     # data = {'api_dev_key':API_KEY,
-    #     # 'api_option':'paste',
-    #     # 'api_paste_code':source_code,
-    #     # 'api_paste_format':'python'}
-    #     # request.post(url, headers=headers)
-        
-    #     driver = webdriver.Firefox()
-    #     driver.get(url)#put here the adress of your page
-    #     try:
-    #         driver.find_element_by_xpath(".//*[@id='refreshProfile']").click()
-    #     except:
-    #         pass
-    #     # print(elem.get_attribute("class"))
-    #     try:
-    #         driver.find_element_by_xpath(".//*[@id='refreshBattles']").click()
-    #     except:
-    #         pass
-    #     # print(elem.get_attribute("class"))
-    #     driver.close()
+
     @commands.command(pass_context=True)
     async def settag(self, ctx, tag):
         """Save user tag. If not given a user, save tag to author"""
@@ -244,6 +499,26 @@ class CRTags:
             await self.bot.say("Saved {} for {}".format(tag, author.display_name))
         else:
             await self.bot.say("Invalid tag {}, it must only have the following characters {}".format(author.mention), validChars)
+
+    @commands.command(pass_context=True)
+    async def mergejsons(self, ctx):
+        tags1 = dataIO.load_json(SETTINGS_JSON)
+        tags2 = dataIO.load_json(SETTINGS2_JSON)
+        tags3 = {}
+        for x in tags1:
+            tags3[x] = tags1[x]
+        for x in tags2:
+            tags3[x] = tags2[x]
+        list3 = sorted(tags3)
+
+        tags4 = {}
+        for x in list3:
+            tags4[x] = tags3[x]
+        for x in tags4:
+            self.settings[x] = tags4[x]
+            dataIO.save_json(SET_JSON, self.settings)
+        print(len(self.settings))
+        dataIO.save_json(SET_JSON, self.settings)
 
     @commands.command(pass_context=True)
     async def setusertag(self, ctx, user: discord.Member, tag):
@@ -262,84 +537,90 @@ class CRTags:
             dataIO.save_json(SETTINGS_JSON, self.settings)
         else:
             await self.bot.say("Invalid tag {}, it must only have the following characters {}".format(ctx.message.author.mention, validChars))
-    @commands.command(pass_context=True)
-    async def initall(self, ctx):
-        racfserver = self.bot.get_server('218534373169954816')
-        auditchannel = self.bot.get_channel('268769178234781696')
-        for member in racfserver.members:
-            await self.bot.send_message(auditchannel, '!crprofile gettag '+member.id)
-            await asyncio.sleep(1)
-            messages = []
-            async for m in self.bot.logs_from(auditchannel, limit=10):
-                if(m.author.id == '280936035536338945'):
-                    messages.append(m)
-                    break
-            message = messages[0].content
-            if(message.find('#') == -1):
-                pass
-            else:
-                tag = message[message.find('#')+1:]
-                self.settings[str(member.id)] = tag
+    # @commands.command(pass_context=True)
+    # async def initall(self, ctx):
+    #     racfserver = self.bot.get_server('218534373169954816')
+    #     auditchannel = self.bot.get_channel('268769178234781696')
+    #     members = racfserver.members
+    #     n = 0
+    #     for member in members:
+    #         m = await self.bot.send_message(auditchannel, '!crprofile gettag '+member.id)
+    #         await asyncio.sleep(4)
+    #         await self.bot.delete_message(m)
+    #         messages = []
+    #         async for m in self.bot.logs_from(auditchannel, limit=10):
+    #             if(m.author.id == '280936035536338945'):
+    #                 messages.append(m)
+    #                 break
+    #         message = messages[0].content
+    #         if(message.find('#') == -1):
+    #             pass
+    #         else:
+    #             tag = message[message.find('#')+1:]
+    #             self.settings[str(member.id)] = tag
 
-                # await self.bot.send_message(auditchannel, member.display_name + ' ' + tag)
-            await asyncio.sleep(2)
-        dataIO.save_json(SETTINGS_JSON, self.settings)
+    #             # await self.bot.send_message(auditchannel, member.display_name + ' ' + tag)
+    #         n += 1
+    #         print(n)
+    #     dataIO.save_json(SETTINGS_JSON, self.settings)
 
 
-    @commands.command(pass_context=True)
-    async def racfinitall(self, ctx):
-        """macro for s.racfinit"""
-        await self.bot.say('s.racfinit alpha', delete_after=1)
-        await self.bot.say('s.racfinit bravo', delete_after=1)
-        await self.bot.say('s.racfinit charlie', delete_after=1)
-        await self.bot.say('s.racfinit delta', delete_after=1)
-        await self.bot.say('s.racfinit echo', delete_after=1)
-        await self.bot.say('s.racfinit foxtrot', delete_after=1)
-        await self.bot.say('s.racfinit golf', delete_after=1)
-        await self.bot.say('s.racfinit hotel', delete_after=1)
-        await self.bot.say('s.racfinit esports', delete_after=1)
+    # @commands.command(pass_context=True)
+    # async def racfinitall(self, ctx):
+    #     """macro for s.racfinit"""
+    #     await self.bot.say('s.racfinit alpha', delete_after=1)
+    #     await self.bot.say('s.racfinit bravo', delete_after=1)
+    #     await self.bot.say('s.racfinit charlie', delete_after=1)
+    #     await self.bot.say('s.racfinit delta', delete_after=1)
+    #     await self.bot.say('s.racfinit echo', delete_after=1)
+    #     await self.bot.say('s.racfinit foxtrot', delete_after=1)
+    #     await self.bot.say('s.racfinit golf', delete_after=1)
+    #     await self.bot.say('s.racfinit hotel', delete_after=1)
+    #     await self.bot.say('s.racfinit esports', delete_after=1)
+    #     await self.bot.say('s.racfinit mini', delete_after=1)
+    #     await self.bot.say('s.racfinit mini2', delete_after=1)
 
-    @commands.command(pass_context=True)
-    async def racfinit(self,ctx, clan:str):
-        """Save user tag. If not given a user, save tag to author"""
-        racfaudits = self.bot.get_channel('268769178234781696')
-        await self.bot.send_message(racfaudits, '!crclan roster '+clan)
-        asyncio.sleep(2.5)
-        messages = []
-        async for m in self.bot.logs_from(racfaudits, limit=10):
-            if(m.author.id == '280936035536338945'):
-                messages.append(m)
-        messages = messages[:2]
-        # for m in messages:
-        # print(messages)
-        # await self.bot.say()
-        playerids = []
-        playertags = []
-        for index, message in enumerate(messages):
-            for i, person in enumerate(messages[index].embeds[0]['fields']):
-                messages[index].embeds[0]['fields'][i]['name'] =  ''
-            for i, person in enumerate(messages[index].embeds[0]['fields']):
-                messages[index].embeds[0]['fields'][i]['value'] =  messages[index].embeds[0]['fields'][i]['value'].replace('\u2193','').replace('\u2191','').replace('`','').replace('League','')
-                value = messages[index].embeds[0]['fields'][i]['value']
-                # print(value)
-                messages[index].embeds[0]['fields'][i]['value'] = messages[index].embeds[0]['fields'][i]['value'][messages[index].embeds[0]['fields'][i]['value'].find('<@')+len('<@'):]
-                value = messages[index].embeds[0]['fields'][i]['value']
-                # print(value)
-                try:
-                    playerid = int(value[:value.find('>')].replace('!',''))
-                    playerids.append(playerid)
-                    playertags.append(value[value.find('#')+len('#'):])
-                except:
-                    pass
-        print(260577636957421568 in playerids)
-        print(playerids)
-        print(playertags)
-        for x in range(0, len(playerids)):
-            self.settings[str(playerids[x])] = playertags[x]
-            dataIO.save_json(SETTINGS_JSON, self.settings)
-        await self.bot.say("initalized", delete_after=1)
-        await self.bot.delete_message(ctx.message)
-        return
+    # @commands.command(pass_context=True)
+    # async def racfinit(self,ctx, clan:str):
+    #     """Save user tag. If not given a user, save tag to author"""
+    #     racfaudits = self.bot.get_channel('268769178234781696')
+    #     await self.bot.send_message(racfaudits, '!crclan roster '+clan, delete_after=5)
+    #     await asyncio.sleep(5)
+    #     messages = []
+    #     async for m in self.bot.logs_from(racfaudits, limit=10):
+    #         if(m.author.id == '280936035536338945'):
+    #             messages.append(m)
+    #     messages = messages[:2]
+    #     # for m in messages:
+    #     # print(messages)
+    #     # await self.bot.say()
+    #     playerids = []
+    #     playertags = []
+    #     for index, message in enumerate(messages):
+    #         for i, person in enumerate(messages[index].embeds[0]['fields']):
+    #             messages[index].embeds[0]['fields'][i]['name'] =  ''
+    #         for i, person in enumerate(messages[index].embeds[0]['fields']):
+    #             messages[index].embeds[0]['fields'][i]['value'] =  messages[index].embeds[0]['fields'][i]['value'].replace('\u2193','').replace('\u2191','').replace('`','').replace('League','')
+    #             value = messages[index].embeds[0]['fields'][i]['value']
+    #             # print(value)
+    #             messages[index].embeds[0]['fields'][i]['value'] = messages[index].embeds[0]['fields'][i]['value'][messages[index].embeds[0]['fields'][i]['value'].find('<@')+len('<@'):]
+    #             value = messages[index].embeds[0]['fields'][i]['value']
+    #             # print(value)
+    #             try:
+    #                 playerid = int(value[:value.find('>')].replace('!',''))
+    #                 playerids.append(playerid)
+    #                 playertags.append(value[value.find('#')+len('#'):])
+    #             except:
+    #                 pass
+    #     print(260577636957421568 in playerids)
+    #     print(playerids)
+    #     print(playertags)
+    #     for x in range(0, len(playerids)):
+    #         self.settings[str(playerids[x])] = playertags[x]
+    #         dataIO.save_json(SETTINGS_JSON, self.settings)
+    #     await self.bot.say("initalized", delete_after=1)
+    #     await self.bot.delete_message(ctx.message)
+    #     return
 
     @commands.command(pass_context=True)
     async def gettag(self, ctx, user: discord.Member=None):
@@ -820,6 +1101,7 @@ class CRTags:
         things = CRPlayer(tags[user.id])
         player_data  = []
         player_data.append('[{}]({})'.format(tags[user.id], user_url))
+        player_data.append('[{}]({})'.format(things.clan,things.clan_url))
         player_data.append(things.pb)
         player_data.append(things.trophy)
         player_data.append(things.cardswon)
@@ -891,6 +1173,8 @@ def check_file():
     defaults = {}
     if not dataIO.is_valid_json(SETTINGS_JSON):
         dataIO.save_json(SETTINGS_JSON, defaults)
+    if not dataIO.is_valid_json(CLAN_JSON):
+        dataIO.save_json(CLAN_JSON, defaults)
 
 def setup(bot):
     check_folder()

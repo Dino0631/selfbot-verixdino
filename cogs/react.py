@@ -106,6 +106,72 @@ class React:
         self.bot = bot
 
 
+
+
+    @commands.command(pass_context=True)
+    async def react(self, ctx, *args):
+        """Add reactions to a message by message id.
+        
+        Add reactions to a specific message id
+        [p]react 123456 :uwot: :lolno: :smile: 
+        
+        Add reactions to the last message in channel
+        [p]react :uwot: :lolno: :smile:
+        """
+        server = ctx.message.server
+        channel = ctx.message.channel
+
+        if not len(args):
+            await send_cmd_help(ctx)
+            return
+
+        has_message_id = args[0].isdigit()
+
+        emojis = args[1:] if has_message_id else args
+        message_id = args[0] if has_message_id else None
+        if has_message_id:
+            try:
+                message = await self.bot.get_message(channel, message_id)
+            except discord.NotFound:
+                await self.bot.say("Cannot find message with that id.")
+                return
+        else:
+            # use the 2nd last message because the last message would be the command
+            messages = []
+            async for m in self.bot.logs_from(channel, limit=2):
+                messages.append(m)
+            message = messages[1]
+
+        useremojis = list(emojis)
+        new_emojis = []
+        if(server == None):
+            new_emojis.extend(useremojis)
+        else:
+            for e in useremojis:
+                lastlist = new_emojis
+                for x in server.emojis:
+                    ename = e[e.find(':') + 1 : e.rfind(':')]
+                    if(x.name == ename):
+                        new_emojis.append(x)
+                if(lastlist == new_emojis):
+                    new_emojis.append(e)
+
+        for emoji in new_emojis:
+            try:
+                await self.bot.add_reaction(message, emoji)
+            except discord.HTTPException:
+                # reaction add failed
+                pass
+            except discord.Forbidden:
+                await self.bot.say(
+                    "I don’t have permission to react to that message.")
+                break
+            except discord.InvalidArgument:
+                await self.bot.say("Invalid arguments for emojis")
+                break
+
+        await self.bot.delete_message(ctx.message)
+
     @commands.command(pass_context=True)
     async def reactchan(self, ctx, chan, *args):
         # """Add reactions to a message by channel.
@@ -281,77 +347,6 @@ class React:
         except:
             await self.bot.say("Invalid text, must be only alphabetic")
         await self.bot.delete_message(ctx.message)
-
-
-
-    # @commands.command(pass_context=True)
-    # async def react(self, ctx, *args):
-    #     """Add reactions to a message by message id.
-        
-    #     Add reactions to a specific message id
-    #     [p]react 123456 :uwot: :lolno: :smile: 
-        
-    #     Add reactions to the last message in channel
-    #     [p]react :uwot: :lolno: :smile:
-    #     """
-    #     server = ctx.message.server
-    #     channel = ctx.message.channel
-
-    #     if not len(args):
-    #         await send_cmd_help(ctx)
-    #         return
-
-    #     has_message_id = args[0].isdigit()
-
-    #     emojis = args[1:] if has_message_id else args
-    #     message_id = args[0] if has_message_id else None
-    #     if has_message_id:
-    #         try:
-    #             message = await self.bot.get_message(channel, message_id)
-    #         except discord.NotFound:
-    #             await self.bot.say("Cannot find message with that id.")
-    #             return
-    #     else:
-    #         # use the 2nd last message because the last message would be the command
-    #         messages = []
-    #         async for m in self.bot.logs_from(channel, limit=2):
-    #             messages.append(m)
-    #         message = messages[1]
-
-    #     useremojis = list(emojis)
-    #     new_emojis = []
-        
-    #     for e in useremojis:
-    #         lastlist = new_emojis
-    #         for x in server.emojis:
-    #             ename = e[e.find(':') + 1 : e.rfind(':')]
-    #             # await self.bot.say("{} == {}".format(x.name, ename))
-    #             if(x.name == ename):
-    #                 new_emojis.append(x)
-    #         if(lastlist == new_emojis):
-    #             new_emojis.append(e)
-
-    #      # await self.bot.say(len(new_emojis[0]))
-
-    #     # await self.bot.say(message.id)
-    #     # await self.bot.say('`{}`'.format(new_emojis))
-    #     # await self.bot.say(type(server.emojis[0]))
-    #     # await self.bot.add_reaction(message, server.emojis[0])
-    #     for emoji in new_emojis:
-    #         try:
-    #             await self.bot.add_reaction(message, emoji)
-    #         except discord.HTTPException:
-    #             # reaction add failed
-    #             pass
-    #         except discord.Forbidden:
-    #             await self.bot.say(
-    #                 "I don’t have permission to react to that message.")
-    #             break
-    #         except discord.InvalidArgument:
-    #             await self.bot.say("Invalid arguments for emojis")
-    #             break
-
-    #     await self.bot.delete_message(ctx.message)
 
 
 
