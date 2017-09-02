@@ -73,9 +73,20 @@ class Stuff():
 
 
     @commands.command(pass_context=True)
-    async def test(self, ctx):
-        print(self.bot.user.id)
+    async def playmusic(self, ctx):
+        genvc = self.bot.get_channel('264119826069454850')
+        voiceclient = await self.bot.join_voice_channel(genvc)
+        player = voiceclient.create_ffmpeg_player('C:\\Users\\Dino Non Admin\\Music\\DevinMartin-MadMaestro.mp3')
+        player.start()
 
+    @commands.command(pass_context=True)
+    async def test(self, ctx):
+        em = discord.Embed()
+        em.add_field(name='\u200b',value='penis')
+        em.add_field(name='\u200b',value='penis')
+        em.add_field(name='\u200b',value='penis')
+        em.add_field(name='\u200b',value='penis')
+        await self.bot.say(embed=em)
     @commands.command(pass_context=True)
     async def sml(self, ctx):
         '''sml's emotions'''
