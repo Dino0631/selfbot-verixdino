@@ -33,8 +33,23 @@ import aiohttp
 from ext.commands.dataIO import dataIO
 import locale
 
+racfclans = {
+	"ALPHA" : "2CCCP",
+	"BRAVO" : "2U2GGQJ",
+	"CHARLIE" : "2QUVVVP",
+	"DELTA" : "Y8GYCGV",
+	"ECHO" : "LGVV2CG",
+	"ESPORTS" : "R8PPJQG",
+	"FOXTROT" : "QUYCYV8",
+	"GOLF" : "GUYGVJY",
+	"HOTEL" : "UGQ28YU",
+	"MINI" : "22LR8JJ2",
+	"MINI2" : "2Q09VJC8"
+}
+
 NUMITEMS = 9
 statscr_url = "http://statsroyale.com/profile/"
+crapiurl = 'http://api.cr-api.com'
 statsurl = 'http://statsroyale.com'
 PATH = os.path.join("data", "crtags")
 SETTINGS_JSON = os.path.join(PATH, "settings.json")
@@ -47,14 +62,24 @@ headers = {
 	'User-Agent': 'Bot(Rain), (https://github.com/Dino0631/discordbot/tree/master)',
 	'From': 'htmldino@gmail.com'  
 }
+async def async_refresh(url):
+	async with aiohttp.get(url) as r:
+		# response = await r.json()
+		a = 1
+		
 class CRClan:
 
-	def __init__(self, tag, ctx):
+	def __init__(self):
+		self.a = 1
+
+	@classmethod
+	async def create(self, tag):
 		tag2id = dataIO.load_json(BACKSETTINGS_JSON)
 		self.member_count = 0                           #done
 		self.members = []                               #done
 		self.clan_tag = tag                             #done
-		self.clan_url = statsurl + '/clan/' + tag       #done
+		self.clan_url = crapiurl + '/clan/' + tag       #done
+		self.clanurl = self.clan_url.replace('api.', '', 1)#done
 		self.tr_req = '0'                               #done
 		self.clan_trophy = ''                           #done
 		self.name = ''                                  #done
@@ -66,21 +91,36 @@ class CRClan:
 		self.coleaders = []								#done
 		self.elders = []								#done
 		self.norole = []								#done
-		r = requests.get(self.clan_url, headers=headers)
-		html_doc = r.content
-		soup = BeautifulSoup(html_doc, "html.parser")
-		htmlmembers = soup.find_all('div',{'class': 'clan__rowContainer'})
-		for i, m in enumerate(htmlmembers):
-			data = m.find_all('div', {'class': 'clan__row'})
-			rank = data[0].get_text()
-			name = data[1].get_text()
-			tag = data[1].find('a').attrs['href']
-			url = statsurl + tag
-			tag = tag[tag.find('profile/')+len('profile/'):]
-			level = data[2].find('span', {'class':'clan__playerLevel'}).get_text()
-			trophy = data[4].find('div', {'class': 'clan__cup'}).get_text()
-			donations = data[5].get_text()
-			role = data[6].get_text()
+		async with aiohttp.ClientSession() as session:
+			async with session.get(self.clan_url) as resp:
+				datadict = await resp.json()
+		
+		# for x in datadict:
+		# 	try:
+		# 		print(x)
+		# 	except:
+		# 		print('some key')
+		# 	try:
+		# 		print(datadict[x])
+		# 	except:
+		# 		print('some value')
+		# for member in datadict['members']:
+		# 	try:
+		# 		print(member)
+		# 	except:
+		# 		print('some member')
+		# r = requests.get(self.clan_url, headers=headers)
+		# html_doc = r.text
+
+		for i, m in enumerate(datadict['members']):
+			rank = str(m['currenRank'])
+			name = str(m['name'])
+			tag = str(m['tag'])
+			url = crapiurl + tag
+			level = str(m['expLevel'])
+			trophy = str(m['score'])
+			donations = str(m['donations'])
+			role = str(m['roleName'])
 			if tag in tag2id:
 				userid = tag2id[tag]
 			else:
@@ -96,10 +136,10 @@ class CRClan:
 				'donations' : donations.strip(),
 				'role' : role.strip()
 			}
-			memberdict['formatted'] = '`'+ memberdict['role']+'` ' + memberdict['name']+' [`#'+memberdict['tag']+'`]('+memberdict['url']+')'
+			memberdict['formatted'] = '`'+ memberdict['role']+'` ' + memberdict['name']+' [`#'+memberdict['tag']+'`]('+memberdict['url'].replace('api.', '', 1)+')'
 			if memberdict['userid'] != '':
 				try:
-					memberdict['formatted'] += ' <@!'+memberdict['userid'] + '>'
+					memberdict['formatted'] += ' <@'+memberdict['userid'] + '>'
 				except:
 					pass
 			if memberdict['role'] == 'Co-Leader':
@@ -113,27 +153,164 @@ class CRClan:
 			self.size += 1
 			self.members.append(memberdict)
 
-		clanhead = soup.find('div', {'class':'clan__name'})
-		self.clan_badge = statsurl + clanhead.find('img').attrs['src']
-		info = clanhead.find('div', {'class':'clan__clanInfo'})
-		self.name = info.find('div', {'class':'ui__headerMedium clan__clanName'}).get_text().strip()
-		self.desc = info.find('div', {'class':'ui__mediumText'}).get_text().strip()
-		info2 = soup.find('div', {'class':'clan__statistics'})
-		trophy = info2.find_all('div', {'class':'clan__metricContent'})
-		self.clan_trophy = trophy[0].find('div', {'class':'ui__headerMedium'}).get_text().strip()
-		self.tr_req = trophy[1].find('div', {'class':'ui__headerMedium'}).get_text().strip()
-		self.donperweek = trophy[2].find('div', {'class':'ui__headerMedium'}).get_text().strip()
+		self.clan_badge = crapiurl + datadict['badge_url']
+		self.name = datadict['name']
+		self.desc = datadict['description']
+		d = self.desc
+		# discordlink = d[d.find('discord.'):d[d.find('discord.'):].find(' ')+d.find('discord.')]
+		d2 = d#.replace(discordlink, "[{}]({})".format(discordlink, 'https://'+discordlink))
+
+		i = 0
+		index = 0
+		# print(d2[-15:])
+		count = d2.lower().count('discord.')
+		# print(count)
+		while i<count:
+			index = d2.lower().find('discord.', index+1)
+			# print(index)
+			# print(d2[index:index+len('discord.')])
+			d4 = d2.replace(d2[index:index+len('discord.')], 'discord.')
+			d3 = d4[index:]
+			# print(d3.find('discord.'))
+			# print(d3)
+			# print()
+			# print()
+			# print()
+			endlink = d3[d3.find('discord.'):].find(' ')
+			if endlink == -1:
+				endlink = len(d3)
+			discordlink = d3[d3.find('discord.'):endlink+d3.find('discord.')]
+			# print(discordlink)
+			# print(d2[index:index+len(discordlink)])
+			d2 = d2.replace(d2[index:index+len(discordlink)], "[{}](https://{})".format(d2[index:index+len(discordlink)], discordlink))
+
+			# print(d2)
+		# 	if i>10:
+		# 		return
+			i += 1
+		sym = '#'
+		numtagsind2 = 0
+		tagsind2 = []
+		index = 0
+		i = 0
+		while i<d2.count(sym):
+			index = d2.find(sym, index+1)
+			x = ''
+			i2 = 1
+			thing = ''
+			while x != ' ':
+				thing += x
+				x = d2[index+i2]
+				i2 += 1
+			valid = True
+			for l in thing:
+				if l not in validChars:
+					valid=False
+					break
+			if valid and len(thing)>5:
+				numtagsind2 += 1
+				tagsind2.append(thing)
+			i += 1
+		for tag in tagsind2:
+			d2 = d2.replace(sym+tag, '[{}]({})'.format(sym+tag, 'https://cr-api.com/clan/'+tag))
+		self.desc2 =  d2
+		self.clan_trophy = datadict['score']
+		self.tr_req = datadict['requiredScore']
+		self.donperweek = datadict['donations']
+		return self
+
+
+
+# class CRClanStatsRoyale:
+
+# 	def __init__(self):
+# 		a = 1
+#	@classmethod
+# 	async def create(self, tag):
+# 		tag2id = dataIO.load_json(BACKSETTINGS_JSON)
+# 		self.member_count = 0                           #done
+# 		self.members = []                               #done
+# 		self.clan_tag = tag                             #done
+# 		self.clan_url = statsurl + '/clan/' + tag       #done
+# 		self.tr_req = '0'                               #done
+# 		self.clan_trophy = ''                           #done
+# 		self.name = ''                                  #done
+# 		self.donperweek = ''							#done
+# 		self.desc = ''									#done
+# 		self.clan_badge = ''							#done
+# 		self.leader = {}								#done
+# 		self.size = 0									#done
+# 		self.coleaders = []								#done
+# 		self.elders = []								#done
+# 		self.norole = []								#done
+# 		r = requests.get(self.clan_url, headers=headers)
+# 		html_doc = r.text
+# 		soup = BeautifulSoup(html_doc, "html.parser")
+# 		htmlmembers = soup.find_all('div',{'class': 'clan__rowContainer'})
+# 		for i, m in enumerate(htmlmembers):
+# 			data = m.find_all('div', {'class': 'clan__row'})
+# 			rank = data[0].get_text()
+# 			name = data[1].get_text()
+# 			tag = data[1].find('a').attrs['href']
+# 			url = statsurl + tag
+# 			tag = tag[tag.find('profile/')+len('profile/'):]
+# 			level = data[2].find('span', {'class':'clan__playerLevel'}).get_text()
+# 			trophy = data[4].find('div', {'class': 'clan__cup'}).get_text()
+# 			donations = data[5].get_text()
+# 			role = data[6].get_text()
+# 			if tag in tag2id:
+# 				userid = tag2id[tag]
+# 			else:
+# 				userid = ''
+# 			memberdict = {
+# 				'name' : name.strip(),
+# 				'rank' : rank.strip(),
+# 				'tag' : tag.strip(),
+# 				'userid': userid.strip(),
+# 				'url' : url.strip(),
+# 				'level' : level.strip(),
+# 				'trophy' : trophy.strip(),
+# 				'donations' : donations.strip(),
+# 				'role' : role.strip()
+# 			}
+# 			memberdict['formatted'] = '`'+ memberdict['role']+'` ' + memberdict['name']+' [`#'+memberdict['tag']+'`]('+memberdict['url']+')'
+# 			if memberdict['userid'] != '':
+# 				try:
+# 					memberdict['formatted'] += ' <@!'+memberdict['userid'] + '>'
+# 				except:
+# 					pass
+# 			if memberdict['role'] == 'Co-Leader':
+# 				self.coleaders.append(memberdict)
+# 			if memberdict['role'] == 'Member':
+# 				self.norole.append(memberdict)
+# 			if memberdict['role'] == 'Elder':
+# 				self.elders.append(memberdict)
+# 			if memberdict['role'] == 'Leader':
+# 				self.leader = memberdict
+# 			self.size += 1
+# 			self.members.append(memberdict)
+
+# 		clanhead = soup.find('div', {'class':'clan__name'})
+# 		self.clan_badge = statsurl + clanhead.find('img').attrs['src']
+# 		info = clanhead.find('div', {'class':'clan__clanInfo'})
+# 		self.name = info.find('div', {'class':'ui__headerMedium clan__clanName'}).get_text().strip()
+# 		self.desc = info.find('div', {'class':'ui__mediumText'}).get_text().strip()
+# 		info2 = soup.find('div', {'class':'clan__statistics'})
+# 		trophy = info2.find_all('div', {'class':'clan__metricContent'})
+# 		self.clan_trophy = trophy[0].find('div', {'class':'ui__headerMedium'}).get_text().strip()
+# 		self.tr_req = trophy[1].find('div', {'class':'ui__headerMedium'}).get_text().strip()
+# 		self.donperweek = trophy[2].find('div', {'class':'ui__headerMedium'}).get_text().strip()
+
 
 
 class CRPlayer:
 
 
-	async def async_refresh(self,url):
-		async with aiohttp.get(url) as r:
-			response = await r.json()
-			return response
+	def __init__(self):
+		self.a = 4
 
-	def __init__(self, tag):
+	@classmethod
+	async def create(self, tag):
 		self.clan_badge = ''                 #done
 
 		self.name = ''                       #done
@@ -155,10 +332,14 @@ class CRPlayer:
 
 		asyncio.sleep(1)
 		user_url = 'http://statsroyale.com/profile/'+tag
+		print('here')
+		await async_refresh(user_url+'/refresh')
+		
 		r = requests.get(user_url, headers=headers)
 		html_doc = r.content
+		
 		soup = BeautifulSoup(html_doc, "html.parser")
-		html_doc = r.content
+		
 		chests_queue = soup.find('div', {'class':'chests__queue'})
 		chests = chests_queue.get_text().split()
 		for index, item in enumerate(chests):
@@ -264,6 +445,7 @@ class CRPlayer:
 		self.level = playerLevel
 		self.clan = playerClan
 		self.clan_url = clan_url
+		return self
 
 
 class InvalidRarity(Exception):
@@ -326,6 +508,58 @@ class CRTags:
 		self.clansettings = dataIO.load_json(CLAN_JSON)
 		self.bot = bot
 
+	@commands.command(pass_context=True)
+	async def saveherokujson(self, ctx):
+		PATH = r'C:\Users\Dino Non Admin\Desktop\myFiles\meStuff\Red-DiscordBot-develop\RainBot\data\crtags'
+		await self.bot.delete_message(ctx.message)
+		rainserver = self.bot.get_server('264119826069454849')
+		rainbot = rainserver.get_member('305519103001755650')
+		msg = await self.bot.send_message(rainbot, '$crsendjson')
+		channel = msg.channel
+		await asyncio.sleep(3)
+		messages = []
+		async for m in self.bot.logs_from(channel, limit=3):
+			messages.append(m)
+		messages = messages[:3]
+		message = messages[0]
+		x = message.attachments
+		# print('***********************')
+		# print(x)
+		# print('*********type**********')
+		# print(type(x))
+		# print('**********dir**********')
+		# print(dir(x))
+		# print('***********************')
+		# print('bean')
+		datadict = []
+		for i, message in enumerate(messages):
+			async with aiohttp.ClientSession() as session:
+				async with session.get(message.attachments[0]['url']) as resp:
+					datadict.append(await resp.json())
+		for i, message in enumerate(messages):
+			dataIO.save_json(os.path.join(PATH, message.attachments[0]['filename']), datadict[i])
+
+		WELCOMEPATH = r'C:\Users\Dino Non Admin\Desktop\myFiles\meStuff\Red-DiscordBot-develop\RainBot\data\welcome'
+		msg = await self.bot.send_message(rainbot, '$wel sendjson')
+		channel = msg.channel
+		await asyncio.sleep(3)
+		messages = []
+		async for m in self.bot.logs_from(channel, limit=1):
+			messages.append(m)
+		messages = messages[:1]
+		message = messages[0]
+		x = message.attachments
+		datadict = []
+		for i, message in enumerate(messages):
+			async with aiohttp.ClientSession() as session:
+				async with session.get(message.attachments[0]['url']) as resp:
+					datadict.append(await resp.json())
+		for i, message in enumerate(messages):
+			dataIO.save_json(os.path.join(WELCOMEPATH, message.attachments[0]['filename']), datadict[i])
+
+
+
+
 	@commands.group(pass_context=True)
 	async def clan(self, ctx):
 		"""get clan info
@@ -333,14 +567,19 @@ class CRTags:
 		# racfserver = self.bot.get_server('218534373169954816')
 		# await self.bot.say(racfserver.get_member('222925389641547776').mention)
 		# await self.bot.say(server.get_member('222925389641547776').mention)
-		# print(dir(CRClan('QUYCYV8', ctx)))
+		# print(dir(CRClan('QUYCYV8')))
 		if ctx.invoked_subcommand is None:
 			await send_cmd_help(ctx)
 
-	@clan.command(name='get',pass_context=True)
-	async def get_clan(self, ctx, keyortag):
-		user = ctx.message.author
+	async def keyortag2tag(self, keyortag, ctx):
 		keyortag = keyortag.upper()
+		members = list(ctx.message.server.members)
+		membernames = []
+		memberswithdiscrim = []
+		for member in members:
+			membernames.append(member.name)
+			memberswithdiscrim.append(member.name + '#' + str(member.discriminator))
+		userid = None
 		tag = ''
 		valid = True
 		for letter in keyortag:
@@ -351,17 +590,53 @@ class CRTags:
 			tag = self.clansettings[keyortag]
 		elif valid:
 			tag = keyortag
+		elif keyortag.startswith('<@'): #assume mention
+			userid = keyortag[2:-1]
+			userid = userid.replace('!', '')
+		elif keyortag.isdigit(): #assume userid
+			userid = keyortag
+		elif keyortag in members or keyortag in membernames or keyortag in memberswithdiscrim:	#if user in members
+			for member in members:
+				name = member.name
+				if keyortag == member:
+					userid = member.id
+				elif keyortag == name:
+					userid = member.id
+					break
+				elif keyortag == name + '#' + member.discriminator:
+					userid = member.id
+					break
 		else:
 			await self.bot.say('`{}` is not in the database, nor is an acceptable tag.'.format(keyortag))
 			return
-		clanurl = statsurl + '/clan/' + tag
-		await self.async_refresh(clanurl+ '/refresh')
-		clan = CRClan(tag, ctx)
+		if userid != None:
+			print(userid)
+			print(self.settings[userid])
+			try:
+				usertag = self.settings[userid]
+			except KeyError:
+				await self.bot.say("That person is not in the database")
+				return None
+			player = await CRPlayer.create(usertag)			
+			tag = player.clan_url.replace(statsurl,'').replace('/clan/', '')
+		return tag
+
+
+	@clan.command(name='get',pass_context=True)
+	async def get_clan(self, ctx, keyortag=None):
+		user = ctx.message.author
+		if keyortag == None:
+			keyortag = user.id
+		tag = await self.keyortag2tag(keyortag, ctx)
+		if tag == None:
+			return
+		clanurl = crapiurl + '/clan/' + tag
+		clan = await CRClan.create(tag)
 		clan_data = []
 		member_data = [] # for displaying all members 
-		clan_data.append(clan.desc)
+		clan_data.append(clan.desc2)
 		clan_data.append(clan.leader['formatted'])
-		clan_data.append("Clan Tag: [`{}`]({})".format(tag, clan.clan_url))
+		clan_data.append("Clan Tag: [`{}`]({})".format(tag, clan.clanurl))
 		clan_data.append("Clan Score: [{}](nothing)".format(clan.clan_trophy))
 		clan_data.append("Trophy Requirement: [{}](nothing)".format(clan.tr_req))
 		# clan_data.append("")
@@ -394,10 +669,10 @@ class CRTags:
 		em = []
 
 		if len(clan_data)>0:
-			em.append(discord.Embed(title=clan.name, description='\n'.join(clan_data),color = discord.Color(0x50d2fe)))
+			em.append(discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='\n'.join(clan_data),color = discord.Color(0x50d2fe)))
 		for data in member_data:
 			if len(em) == 0:
-				em.append(discord.Embed(title=clan.name, description='\n'.join(data),color = discord.Color(0x50d2fe)))
+				em.append(discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='\n'.join(data),color = discord.Color(0x50d2fe)))
 			else:
 				em.append(discord.Embed(description='\n'.join(data),color = discord.Color(0x50d2fe)))
 		try:
@@ -406,35 +681,25 @@ class CRTags:
 			discordname = user.name
 		em[0].set_author(icon_url=user.avatar_url,name=discordname)
 		em[0].set_thumbnail(url=clan.clan_badge)
-		em[len(em)-1].set_footer(text='Data provided by StatsRoyale', icon_url='http://i.imgur.com/17R3DVU.png')
+		em[len(em)-1].set_footer(text='Data provided by {}'.format(crapiurl.replace('api.', '', 1)), icon_url='https://raw.githubusercontent.com/cr-api/cr-api-docs/master/docs/img/cr-api-logo-b.png')
 
 
 		for e in em:
 			await self.bot.say(embed=e)
 
 	@clan.command(name='roster',pass_context=True)
-	async def clanroster(self, ctx, keyortag):
+	async def clanroster(self, ctx, keyortag=None):
 		user = ctx.message.author
-		keyortag = keyortag.upper()
-		tag = ''
-		valid = True
-		for letter in keyortag:
-			if letter not in validChars:
-				valid = False
-				break
-		if keyortag in self.clansettings:
-			tag = self.clansettings[keyortag]
-		elif valid:
-			tag = keyortag
-		else:
-			await self.bot.say('`{}` is not in the database, nor is an acceptable tag.'.format(keyortag))
+		if keyortag == None:
+			keyortag = user.id
+		tag = await self.keyortag2tag(keyortag, ctx)
+		if tag == None:
 			return
-		clanurl = statsurl + '/clan/' + tag
-		await self.async_refresh(clanurl+ '/refresh')
-		clan = CRClan(tag, ctx)
+		clanurl = crapiurl + '/clan/' + tag
+		clan = await CRClan.create(tag)
 		clan_data = []
 		member_data = [] # for displaying all members 
-		# clan_data.append(clan.desc)
+		# clan_data.append(clan.desc2)
 		# clan_data.append(clan.leader['formatted'])
 		# clan_data.append("Clan Tag: [`{}`]({})".format(tag, clan.clan_url))
 		# clan_data.append("Clan Score: [{}](nothing)".format(clan.clan_trophy))
@@ -469,10 +734,10 @@ class CRTags:
 		em = []
 
 		if len(clan_data)>0:
-			em.append(discord.Embed(title=clan.name, description='\n'.join(clan_data),color = discord.Color(0x50d2fe)))
+			em.append(discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='\n'.join(clan_data),color = discord.Color(0x50d2fe)))
 		for data in member_data:
 			if len(em) == 0:
-				em.append(discord.Embed(title=clan.name, description='\n'.join(data),color = discord.Color(0x50d2fe)))
+				em.append(discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='\n'.join(data),color = discord.Color(0x50d2fe)))
 			else:
 				em.append(discord.Embed(description='\n'.join(data),color = discord.Color(0x50d2fe)))
 		try:
@@ -481,7 +746,7 @@ class CRTags:
 			discordname = user.name
 		em[0].set_author(icon_url=user.avatar_url,name=discordname)
 		em[0].set_thumbnail(url=clan.clan_badge)
-		em[len(em)-1].set_footer(text='Data provided by StatsRoyale', icon_url='http://i.imgur.com/17R3DVU.png')
+		em[len(em)-1].set_footer(text='Data provided by {}'.format(crapiurl.replace('api.', '', 1)), icon_url='https://raw.githubusercontent.com/cr-api/cr-api-docs/master/docs/img/cr-api-logo-b.png')
 
 
 		for e in em:
@@ -489,28 +754,18 @@ class CRTags:
 
 
 	@clan.command(name='coleaders',aliases=['cos', 'coleader'],pass_context=True)
-	async def clancoleaders(self, ctx, keyortag):
+	async def clancoleaders(self, ctx, keyortag=None):
 		user = ctx.message.author
-		keyortag = keyortag.upper()
-		tag = ''
-		valid = True
-		for letter in keyortag:
-			if letter not in validChars:
-				valid = False
-				break
-		if keyortag in self.clansettings:
-			tag = self.clansettings[keyortag]
-		elif valid:
-			tag = keyortag
-		else:
-			await self.bot.say('`{}` is not in the database, nor is an acceptable tag.'.format(keyortag))
+		if keyortag == None:
+			keyortag = user.id
+		tag = await self.keyortag2tag(keyortag, ctx)
+		if tag == None:
 			return
-		clanurl = statsurl + '/clan/' + tag
-		await self.async_refresh(clanurl+ '/refresh')
-		clan = CRClan(tag, ctx)
+		clanurl = crapiurl + '/clan/' + tag
+		clan = await CRClan.create(tag)
 		clan_data = []
 		member_data = [] # for displaying all members 
-		# clan_data.append(clan.desc)
+		# clan_data.append(clan.desc2)
 		# clan_data.append(clan.leader['formatted'])
 		# clan_data.append("Clan Tag: [`{}`]({})".format(tag, clan.clan_url))
 		# clan_data.append("Clan Score: [{}](nothing)".format(clan.clan_trophy))
@@ -521,7 +776,10 @@ class CRTags:
 		#     await self.bot.say(clan.members[n])
 		#     n += 1
 		# return
+		membertype = None
 		members2display = clan.coleaders
+		if members2display != clan.members:
+			membertype = members2display[0]['role']
 		n = 0
 		members_per_embed = 13
 		member_data = [] # for displaying all members
@@ -543,12 +801,25 @@ class CRTags:
 
 
 		em = []
-
+		if membertype != None:
+			currentdesc = "**{}** `{}s`\n".format(len(members2display), membertype)
+		else:
+			currentdesc = ''
 		if len(clan_data)>0:
-			em.append(discord.Embed(title=clan.name, description='\n'.join(clan_data),color = discord.Color(0x50d2fe)))
+			# emtitle = clan.name
+			# if membertype != None:
+				# emtitle += '\n{} {}s'.format(len(members2display), membertype)
+			e = discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='{}{}'.format(currentdesc, '\n'.join(data)),color = discord.Color(0x50d2fe))
+			em.append(e)
+
 		for data in member_data:
 			if len(em) == 0:
-				em.append(discord.Embed(title=clan.name, description='\n'.join(data),color = discord.Color(0x50d2fe)))
+				# emtitle = clan.name
+				# if membertype != None:
+				# 	emtitle += '\n{} {}s'.format(len(members2display), membertype)
+				e = discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='{}{}'.format(currentdesc, '\n'.join(data)),color = discord.Color(0x50d2fe))
+				em.append(e)
+				
 			else:
 				em.append(discord.Embed(description='\n'.join(data),color = discord.Color(0x50d2fe)))
 		try:
@@ -556,8 +827,9 @@ class CRTags:
 		except:
 			discordname = user.name
 		em[0].set_author(icon_url=user.avatar_url,name=discordname)
+		# em[0].
 		em[0].set_thumbnail(url=clan.clan_badge)
-		em[len(em)-1].set_footer(text='Data provided by StatsRoyale', icon_url='http://i.imgur.com/17R3DVU.png')
+		em[len(em)-1].set_footer(text='Data provided by {}'.format(crapiurl.replace('api.', '', 1)), icon_url='https://raw.githubusercontent.com/cr-api/cr-api-docs/master/docs/img/cr-api-logo-b.png')
 
 
 		for e in em:
@@ -566,28 +838,18 @@ class CRTags:
 
 
 	@clan.command(name='elders',aliases=['elder'],pass_context=True)
-	async def clanelders(self, ctx, keyortag):
+	async def clanelders(self, ctx, keyortag=None):
 		user = ctx.message.author
-		keyortag = keyortag.upper()
-		tag = ''
-		valid = True
-		for letter in keyortag:
-			if letter not in validChars:
-				valid = False
-				break
-		if keyortag in self.clansettings:
-			tag = self.clansettings[keyortag]
-		elif valid:
-			tag = keyortag
-		else:
-			await self.bot.say('`{}` is not in the database, nor is an acceptable tag.'.format(keyortag))
+		if keyortag == None:
+			keyortag = user.id
+		tag = await self.keyortag2tag(keyortag, ctx)
+		if tag == None:
 			return
-		clanurl = statsurl + '/clan/' + tag
-		await self.async_refresh(clanurl+ '/refresh')
-		clan = CRClan(tag, ctx)
+		clanurl = crapiurl + '/clan/' + tag
+		clan = await CRClan.create(tag)
 		clan_data = []
 		member_data = [] # for displaying all members 
-		# clan_data.append(clan.desc)
+		# clan_data.append(clan.desc2)
 		# clan_data.append(clan.leader['formatted'])
 		# clan_data.append("Clan Tag: [`{}`]({})".format(tag, clan.clan_url))
 		# clan_data.append("Clan Score: [{}](nothing)".format(clan.clan_trophy))
@@ -598,7 +860,10 @@ class CRTags:
 		#     await self.bot.say(clan.members[n])
 		#     n += 1
 		# return
+		membertype = None
 		members2display = clan.elders
+		if members2display != clan.members:
+			membertype = members2display[0]['role']
 		n = 0
 		members_per_embed = 13
 		member_data = [] # for displaying all members
@@ -620,12 +885,24 @@ class CRTags:
 
 
 		em = []
-
+		if membertype != None:
+			currentdesc = "**{}** `{}s`\n".format(len(members2display), membertype)
+		else:
+			currentdesc = ''
 		if len(clan_data)>0:
-			em.append(discord.Embed(title=clan.name, description='\n'.join(clan_data),color = discord.Color(0x50d2fe)))
+			# emtitle = clan.name
+			# if membertype != None:
+				# emtitle += '\n{} {}s'.format(len(members2display), membertype)
+			e = discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='{}{}'.format(currentdesc, '\n'.join(data)),color = discord.Color(0x50d2fe))
+			em.append(e)
 		for data in member_data:
 			if len(em) == 0:
-				em.append(discord.Embed(title=clan.name, description='\n'.join(data),color = discord.Color(0x50d2fe)))
+				# emtitle = clan.name
+				# if membertype != None:
+				# 	emtitle += '\n{} {}s'.format(len(members2display), membertype)
+				e = discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='{}{}'.format(currentdesc, '\n'.join(data)),color = discord.Color(0x50d2fe))
+				em.append(e)
+				
 			else:
 				em.append(discord.Embed(description='\n'.join(data),color = discord.Color(0x50d2fe)))
 		try:
@@ -633,8 +910,9 @@ class CRTags:
 		except:
 			discordname = user.name
 		em[0].set_author(icon_url=user.avatar_url,name=discordname)
+		# em[0].
 		em[0].set_thumbnail(url=clan.clan_badge)
-		em[len(em)-1].set_footer(text='Data provided by StatsRoyale', icon_url='http://i.imgur.com/17R3DVU.png')
+		em[len(em)-1].set_footer(text='Data provided by {}'.format(crapiurl.replace('api.', '', 1)), icon_url='https://raw.githubusercontent.com/cr-api/cr-api-docs/master/docs/img/cr-api-logo-b.png')
 
 
 		for e in em:
@@ -644,28 +922,18 @@ class CRTags:
 
 
 	@clan.command(name='norole',aliases=['members'],pass_context=True)
-	async def clannorole(self, ctx, keyortag):
+	async def clannorole(self, ctx, keyortag=None):
 		user = ctx.message.author
-		keyortag = keyortag.upper()
-		tag = ''
-		valid = True
-		for letter in keyortag:
-			if letter not in validChars:
-				valid = False
-				break
-		if keyortag in self.clansettings:
-			tag = self.clansettings[keyortag]
-		elif valid:
-			tag = keyortag
-		else:
-			await self.bot.say('`{}` is not in the database, nor is an acceptable tag.'.format(keyortag))
+		if keyortag == None:
+			keyortag = user.id
+		tag = await self.keyortag2tag(keyortag, ctx)
+		if tag == None:
 			return
-		clanurl = statsurl + '/clan/' + tag
-		await self.async_refresh(clanurl+ '/refresh')
-		clan = CRClan(tag, ctx)
+		clanurl = crapiurl + '/clan/' + tag
+		clan = await CRClan.create(tag)
 		clan_data = []
 		member_data = [] # for displaying all members 
-		# clan_data.append(clan.desc)
+		# clan_data.append(clan.desc2)
 		# clan_data.append(clan.leader['formatted'])
 		# clan_data.append("Clan Tag: [`{}`]({})".format(tag, clan.clan_url))
 		# clan_data.append("Clan Score: [{}](nothing)".format(clan.clan_trophy))
@@ -676,7 +944,10 @@ class CRTags:
 		#     await self.bot.say(clan.members[n])
 		#     n += 1
 		# return
+		membertype = None
 		members2display = clan.norole
+		if members2display != clan.members:
+			membertype = members2display[0]['role']
 		n = 0
 		members_per_embed = 13
 		member_data = [] # for displaying all members
@@ -698,12 +969,24 @@ class CRTags:
 
 
 		em = []
-
+		if membertype != None:
+			currentdesc = "**{}** `{}s`\n".format(len(members2display), membertype)
+		else:
+			currentdesc = ''
 		if len(clan_data)>0:
-			em.append(discord.Embed(title=clan.name, description='\n'.join(clan_data),color = discord.Color(0x50d2fe)))
+			# emtitle = clan.name
+			# if membertype != None:
+				# emtitle += '\n{} {}s'.format(len(members2display), membertype)
+			e = discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='{}{}'.format(currentdesc, '\n'.join(data)),color = discord.Color(0x50d2fe))
+			em.append(e)
 		for data in member_data:
 			if len(em) == 0:
-				em.append(discord.Embed(title=clan.name, description='\n'.join(data),color = discord.Color(0x50d2fe)))
+				# emtitle = clan.name
+				# if membertype != None:
+				# 	emtitle += '\n{} {}s'.format(len(members2display), membertype)
+				e = discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='{}{}'.format(currentdesc, '\n'.join(data)),color = discord.Color(0x50d2fe))
+				em.append(e)
+				
 			else:
 				em.append(discord.Embed(description='\n'.join(data),color = discord.Color(0x50d2fe)))
 		try:
@@ -711,8 +994,9 @@ class CRTags:
 		except:
 			discordname = user.name
 		em[0].set_author(icon_url=user.avatar_url,name=discordname)
+		# em[0].
 		em[0].set_thumbnail(url=clan.clan_badge)
-		em[len(em)-1].set_footer(text='Data provided by StatsRoyale', icon_url='http://i.imgur.com/17R3DVU.png')
+		em[len(em)-1].set_footer(text='Data provided by {}'.format(crapiurl.replace('api.', '', 1)), icon_url='https://raw.githubusercontent.com/cr-api/cr-api-docs/master/docs/img/cr-api-logo-b.png')
 
 
 		for e in em:
@@ -720,30 +1004,20 @@ class CRTags:
 
 
 	@clan.command(name='info',pass_context=True)
-	async def claninfo(self, ctx, keyortag):
+	async def claninfo(self, ctx, keyortag=None):
 		user = ctx.message.author
-		keyortag = keyortag.upper()
-		tag = ''
-		valid = True
-		for letter in keyortag:
-			if letter not in validChars:
-				valid = False
-				break
-		if keyortag in self.clansettings:
-			tag = self.clansettings[keyortag]
-		elif valid:
-			tag = keyortag
-		else:
-			await self.bot.say('`{}` is not in the database, nor is an acceptable tag.'.format(keyortag))
+		if keyortag == None:
+			keyortag = user.id
+		tag = await self.keyortag2tag(keyortag, ctx)
+		if tag == None:
 			return
-		clanurl = statsurl + '/clan/' + tag
-		await self.async_refresh(clanurl+ '/refresh')
-		clan = CRClan(tag, ctx)
+		clanurl = crapiurl + '/clan/' + tag
+		clan = await CRClan.create(tag)
 		clan_data = []
 		member_data = [] # for displaying all members 
-		clan_data.append(clan.desc)
+		clan_data.append(clan.desc2)
 		clan_data.append(clan.leader['formatted'])
-		clan_data.append("Clan Tag: [`{}`]({})".format(tag, clan.clan_url))
+		clan_data.append("Clan Tag: [`{}`]({})".format(tag, clan.clanurl))
 		clan_data.append("Clan Score: [{}](nothing)".format(clan.clan_trophy))
 		clan_data.append("Trophy Requirement: [{}](nothing)".format(clan.tr_req))
 
@@ -751,10 +1025,10 @@ class CRTags:
 		em = []
 
 		if len(clan_data)>0:
-			em.append(discord.Embed(title=clan.name, description='\n'.join(clan_data),color = discord.Color(0x50d2fe)))
+			em.append(discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='\n'.join(clan_data),color = discord.Color(0x50d2fe)))
 		for data in member_data:
 			if len(em) == 0:
-				em.append(discord.Embed(title=clan.name, description='\n'.join(data),color = discord.Color(0x50d2fe)))
+				em.append(discord.Embed(url=clan.clanurl, title="{}".format(clan.name), description='\n'.join(data),color = discord.Color(0x50d2fe)))
 			else:
 				em.append(discord.Embed(description='\n'.join(data),color = discord.Color(0x50d2fe)))
 		try:
@@ -763,7 +1037,7 @@ class CRTags:
 			discordname = user.name
 		em[0].set_author(icon_url=user.avatar_url,name=discordname)
 		em[0].set_thumbnail(url=clan.clan_badge)
-		em[len(em)-1].set_footer(text='Data provided by StatsRoyale', icon_url='http://i.imgur.com/17R3DVU.png')
+		em[len(em)-1].set_footer(text='Data provided by {}'.format(crapiurl.replace('api.', '', 1)), icon_url='https://raw.githubusercontent.com/cr-api/cr-api-docs/master/docs/img/cr-api-logo-b.png')
 
 
 		for e in em:
@@ -899,17 +1173,7 @@ class CRTags:
 		# for rarity in totalgold:
 		#     await self.bot.say("You have spent a total of {} gold on upgrading {} cards".format(totalgold[rarity], rarity))
 
-	def savetag(self, userid, tag):
-		try:
-			if not userid.isdigit():
-				print("must save userid, tag not backwards")
-				return
-		except:
-			return
-		self.settings[userid] = str(tag)
-		self.backsettings[str(tag)] = userid
-		dataIO.save_json(SETTINGS_JSON, self.settings)
-		dataIO.save_json(BACKSETTINGS_JSON, self.backsettings)
+
 
 	def statsvalid(self, tag):
 		for letter in tag:
@@ -941,22 +1205,6 @@ class CRTags:
 
 
 	@commands.command(pass_context=True)
-	async def settag(self, ctx, tag):
-		"""Save user tag. If not given a user, save tag to author"""
-		tag = tag.upper()
-		tag.replace('O', '0')
-		valid = True
-		for letter in tag:
-			if letter not in validChars:
-				valid = False
-		if valid: #self.is_valid(tag):
-			author = ctx.message.author
-			self.savetag(author.id, tag)
-			await self.bot.say("Saved {} for {}".format(tag, author.display_name))
-		else:
-			await self.bot.say("Invalid tag {}, it must only have the following characters {}".format(author.mention), validChars)
-
-	@commands.command(pass_context=True)
 	async def mergejsons(self, ctx):
 		tags1 = dataIO.load_json(SETTINGS_JSON)
 		tags2 = dataIO.load_json(SETTINGS2_JSON)
@@ -976,23 +1224,6 @@ class CRTags:
 		print(len(self.settings))
 		dataIO.save_json(SET_JSON, self.settings)
 
-	@commands.command(pass_context=True)
-	async def setusertag(self, ctx, user: discord.Member, tag):
-		"""Save user tag. If not given a user, save tag to author"""
-		if user == None:
-			user = ctx.message.author
-		tag = tag.upper()
-		tag.replace('O', '0')
-		valid = True
-		for letter in tag:
-			if letter not in validChars:
-				valid = False
-		if valid: #self.is_valid(tag):
-			author = ctx.message.author
-			await self.bot.say("Saving {} for {}".format(tag, user.display_name))
-			self.savetag(user.id, tag)
-		else:
-			await self.bot.say("Invalid tag {}, it must only have the following characters {}".format(ctx.message.author.mention, validChars))
 	# @commands.command(pass_context=True)
 	# async def initall(self, ctx):
 	#     racfserver = self.bot.get_server('218534373169954816')
@@ -1078,25 +1309,6 @@ class CRTags:
 	#     await self.bot.delete_message(ctx.message)
 	#     return
 
-	@commands.command(pass_context=True)
-	async def gettag(self, ctx, user: discord.Member=None):
-		"""Get user tag. If not given a user, get author's tag"""
-		tags = dataIO.load_json(SETTINGS_JSON)
-		try:
-			test = tags[user.id]
-		except(KeyError):
-			await self.bot.say("{} does not have a tag set.".format(user.display_name))
-			return
-		if(user==None):
-			if tags[ctx.message.author.id]:
-				await self.bot.say("Your tag is {}.".format(tags[ctx.message.author.id]))
-			else:
-				await self.bot.say("You, {} do not have a tag set.".format(ctx.message.author.display_name))
-		else:
-			if tags[user.id]:
-				await self.bot.say("{}'s tag is {}.".format(user.mention, tags[user.id]))
-			else:
-				await self.bot.say("User {} does not have a tag set.".format(user.display_name))
 		# #update profile
 		# driver = webdriver.Firefox()
 		# driver.get(user_url)#put here the adress of your page
@@ -1118,6 +1330,73 @@ class CRTags:
 		if ctx.invoked_subcommand is None:
 			await send_cmd_help(ctx)
 
+	def savetag(self, userid, tag):
+		try:
+			if not userid.isdigit():
+				print("must save userid, tag not backwards")
+				return
+		except:
+			return
+		self.settings[userid] = str(tag)
+		self.backsettings[str(tag)] = userid
+		dataIO.save_json(SETTINGS_JSON, self.settings)
+		dataIO.save_json(BACKSETTINGS_JSON, self.backsettings)
+		
+	@clashroyale.command(name='get', pass_context=True)
+	async def gettag(self, ctx, user: discord.Member=None):
+		"""Get user tag. If not given a user, get author's tag"""
+		tags = dataIO.load_json(SETTINGS_JSON)
+		try:
+			test = tags[user.id]
+		except(KeyError):
+			await self.bot.say("{} does not have a tag set.".format(user.display_name))
+			return
+		if(user==None):
+			if tags[ctx.message.author.id]:
+				await self.bot.say("Your tag is {}.".format(tags[ctx.message.author.id]))
+			else:
+				await self.bot.say("You, {} do not have a tag set.".format(ctx.message.author.display_name))
+		else:
+			if tags[user.id]:
+				await self.bot.say("{}'s tag is {}.".format(user.mention, tags[user.id]))
+			else:
+				await self.bot.say("User {} does not have a tag set.".format(user.display_name))
+
+
+	@clashroyale.command(pass_context=True)
+	async def settag(self, ctx, tag):
+		"""Save user tag. If not given a user, save tag to author"""
+			author = ctx.message.author
+		tag = tag.upper()
+		tag.replace('O', '0')
+		valid = True
+		for letter in tag:
+			if letter not in validChars:
+				valid = False
+		if valid: #self.is_valid(tag):
+			self.savetag(author.id, tag)
+			await self.bot.say("Saved {} for {}".format(tag, author.display_name))
+		else:
+			await self.bot.say("Invalid tag {}, it must only have the following characters {}".format(author.mention, validChars))
+
+
+	@clashroyale.command(pass_context=True)
+	async def setusertag(self, ctx, user: discord.Member, tag):
+		"""Save user tag. If not given a user, save tag to author"""
+		if user == None:
+			user = ctx.message.author
+		tag = tag.upper()
+		tag.replace('O', '0')
+		valid = True
+		for letter in tag:
+			if letter not in validChars:
+				valid = False
+		if valid: #self.is_valid(tag):
+			author = ctx.message.author
+			await self.bot.say("Saving {} for {}".format(tag, user.display_name))
+			self.savetag(user.id, tag)
+		else:
+			await self.bot.say("Invalid tag {}, it must only have the following characters {}".format(ctx.message.author.mention, validChars))
 
 	# @clashroyale.command(pass_context=True)
 	# async def profile(self, ctx, user: discord.Member=None):
@@ -1318,7 +1597,7 @@ class CRTags:
 				return
 		
 		user_url = (statscr_url+ tag)
-		things = CRPlayer(tag)
+		things = await CRPlayer.create(tag)
 		player_data  = []
 		player_data.append('[{}]({})'.format(tag, user_url))
 		# player_data.append(things.pb)
@@ -1382,7 +1661,7 @@ class CRTags:
 				return
 		
 		user_url = (statscr_url+ tag)
-		things = CRPlayer(tag)
+		things = await CRPlayer.create(tag)
 		player_data  = []
 		player_data.append('[{}]({})'.format(tag, user_url))
 		# player_data.append(things.pb)
@@ -1446,7 +1725,7 @@ class CRTags:
 				return
 		
 		user_url = (statscr_url+ tag)
-		things = CRPlayer(tag)
+		things = await CRPlayer.create(tag)
 		player_data  = []
 		player_data.append('[{}]({})'.format(tag, user_url))
 		# player_data.append(things.pb)
@@ -1510,7 +1789,7 @@ class CRTags:
 				return
 		
 		user_url = (statscr_url+ tag)
-		things = CRPlayer(tag)
+		things = await CRPlayer.create(tag)
 		player_data  = []
 		player_data.append('[{}]({})'.format(tag, user_url))
 		player_data.append('[{}]({})'.format(things.clan,things.clan_url))
@@ -1574,7 +1853,7 @@ class CRTags:
 				return
 		
 		user_url = (statscr_url+ tag)
-		things = CRPlayer(tag)
+		things = await CRPlayer.create(tag)
 		player_data  = []
 		player_data.append('[{}]({})'.format(tag, user_url))
 		player_data.append(things.pb)

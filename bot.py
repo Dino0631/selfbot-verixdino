@@ -45,7 +45,6 @@ def run_wizard():
 heroku = False
 if 'DYNO_RAM' in os.environ:
     heroku = True
-    TOKEN = os.environ['TOKEN'] 
 
 else:
     heroku = False
@@ -105,9 +104,57 @@ def on_message2(message):
         return
     yield from bot.process_commands(message)
 
+# @asyncio.coroutine
+# def myon_member_join(member):
+
+
+#     randomserv = bot.get_server('354544842845716480')
+#     randomserv = bot.get_server('351873361023991821')
+#     testystuff = randomserv.get_channel('355724086149906434')
+#     testystuff = randomserv.get_channel('351873361023991821')
+    
+#     try:
+#         servinvites = yield from bot.invites_from(member.server)
+#     except:
+#         servinvites = []
+#     # x = randomserv
+#     # print('***********************')
+#     # print(x)
+#     # print('*********type**********')
+#     # print(type(x))
+#     # print('**********dir**********')
+#     # print(dir(x))
+#     # print('***********************')
+#     x = randomserv.channels
+#     print('***********************')
+#     print(x)
+#     print('*********type**********')
+#     print(type(x))
+#     print('**********dir**********')
+#     print(dir(x))
+#     print('***********************')
+
+#     server = randomserv
+#     # channels = list(server.channels)
+#     # channelsend = channels[0]
+#     channels = list(server.channels)
+#     print(type(channels))
+#     # for chan in channels:
+#     #     print(chan)
+#     channelsend = None
+#     for channel in channels:
+#         if channelsend == None or (channelsend.created_at > channel.created_at and channel.type == 'text'):
+#             channelsend = channel
+
+
+#     yield from bot.send_message(channelsend, 'Welcome to {}, {}!'.format(member.server.name, member.name))
+#     # print('Welcome to {}, {}!'.format(member.server.name, member.name+'#'+member.discriminator))
+#     invite = None
+#     # inviter = invite.inviter
 
 @bot.event
 async def on_ready():
+    # bot.on_member_join = myon_member_join
     if bot.user.id == '222925389641547776':
         bot.on_message = on_message2
     bot.uptime = datetime.datetime.now()
@@ -126,6 +173,8 @@ async def on_ready():
     print('\n'.join(x))
     if heroku:
         print('Hosting on heroku.')
+
+
 
 
 

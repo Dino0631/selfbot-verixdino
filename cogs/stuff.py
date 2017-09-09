@@ -14,6 +14,7 @@ import string
 import aiohttp
 from urllib.parse import quote_plus
 import locale
+from ext.commands.dataIO import dataIO
 
 
 
@@ -57,6 +58,8 @@ def pagify(text, delims=["\n"], *, escape=True, shorten_by=8,
     else:
         yield in_text
 
+
+PATH = r'C:\Users\Dino Non Admin\Desktop\myFiles\meStuff\Red-DiscordBot-develop\RainBot\data\crtags'
 class Stuff():
 
 
@@ -79,14 +82,22 @@ class Stuff():
         player = voiceclient.create_ffmpeg_player('C:\\Users\\Dino Non Admin\\Music\\DevinMartin-MadMaestro.mp3')
         player.start()
 
+
     @commands.command(pass_context=True)
     async def test(self, ctx):
-        em = discord.Embed()
-        em.add_field(name='\u200b',value='penis')
-        em.add_field(name='\u200b',value='penis')
-        em.add_field(name='\u200b',value='penis')
-        em.add_field(name='\u200b',value='penis')
-        await self.bot.say(embed=em)
+        await self.bot.say(self.bot.get_server('351873361023991821').default_channel)
+        # x = ctx.message.server._default_channel
+        # channel = self.bot.get_channel('355724086149906434')
+        # ctx.message.server.default_channel = channel
+        # print('***********************')
+        # print(x)
+        # print('*********type**********')
+        # print(type(x))
+        # print('**********dir**********')
+        # print(dir(x))
+        # print('***********************')
+        # print(ctx.message.server._default_channel)
+
     @commands.command(pass_context=True)
     async def sml(self, ctx):
         '''sml's emotions'''
