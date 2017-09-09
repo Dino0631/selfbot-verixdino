@@ -1366,7 +1366,7 @@ class CRTags:
 	@clashroyale.command(pass_context=True)
 	async def settag(self, ctx, tag):
 		"""Save user tag. If not given a user, save tag to author"""
-			author = ctx.message.author
+		author = ctx.message.author
 		tag = tag.upper()
 		tag.replace('O', '0')
 		valid = True
